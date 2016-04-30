@@ -1,0 +1,4 @@
+rootProject.name = 'ircsy'
+include 'client-node'
+include 'server'
+include 'web-app'
