@@ -1,4 +1,4 @@
-package pl.jaca.ircsy.chat;
+package chat;
 
 import java.util.Optional;
 

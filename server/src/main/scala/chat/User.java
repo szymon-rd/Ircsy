@@ -1,4 +1,4 @@
-package pl.jaca.ircsy.chat;
+package chat;
 
 import rx.Observable;
 
@@ -13,9 +13,9 @@ public interface User {
     Channel joinChannel(String channelName);
 
     /**
-     * @return Channels User is on.
+     * @return Channels the user is on.
      */
-    List<Channel> getChannels();
+    List<Channel> getActiveChannels();
 
     Observable<String> getCommandReplies();
 
@@ -23,7 +23,7 @@ public interface User {
 
     /**
      * @param userName
-     * @return Starts a conversation with User 
+     * @return Starts a conversation with User
      */
     Conversation startConversation(String userName);
 }

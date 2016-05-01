@@ -1,6 +1,4 @@
-package pl.jaca.ircsy.chat;
-
-import java.util.Optional;
+package chat;
 
 /**
  * @author Jaca777
