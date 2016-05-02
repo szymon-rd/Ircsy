@@ -1,6 +1,6 @@
 # Ircsy
 
-Ircsy is a distributed irc client with a web-based user interface. It globally stores chat history for channels and conversations.
+Ircsy is a distributed irc client with web-based user interface. Its purpose is to provide lightweight client with access to global chatting history. 
 
 ## features
  - [ ] Chat bot.
