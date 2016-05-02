@@ -12,7 +12,7 @@ import pl.jaca.ircsy.clientnode.listening.ServerConnectionListener.Start
   * @author Jaca777
   *         Created 2016-05-01 at 23
   */
-class ConnectionListenerRegionCoordinator(sharding: ClusterSharding) extends Actor{
+class ConnectionListenerRegionCoordinator(sharding: ClusterSharding) extends Actor {
 
   val extractEntityId: ShardRegion.ExtractEntityId = {
     case StartListener(serverName, userName) =>
@@ -39,7 +39,17 @@ class ConnectionListenerRegionCoordinator(sharding: ClusterSharding) extends Act
     new String(md5.take(ShardIdLength))
   }
 
-  val listenerRegion: ActorRef = sharding.start(
+  val listenerRegion: ActorRef = {
+    try {
+      resolveRegion()
+    } catch {
+      case _: IllegalArgumentException => startRegion()
+    }
+  }
+
+  private def resolveRegion() = sharding.shardRegion("Listener")
+
+  private def startRegion() = sharding.start(
     typeName = "Listener",
     entityProps = Props[ServerConnectionListener],
     settings = ClusterShardingSettings(context.system),
@@ -57,5 +67,7 @@ object ConnectionListenerRegionCoordinator {
   private val ShardIdLength = 3
 
   case class StartListener(serverName: String, userName: String)
+
   case class ForwardToListener(serverName: String, userName: String, msg: Any)
+
 }
