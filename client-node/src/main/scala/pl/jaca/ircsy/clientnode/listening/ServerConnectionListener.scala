@@ -10,9 +10,11 @@ import scala.util.Try
   * @author Jaca777
   *         Created 2016-05-01 at 17
   */
-class ServerConnectionListener(connectionFactory: ChatConnectionFactory) extends PersistentActor {
+class ServerConnectionListener() extends PersistentActor {
 
-  var state: ListenerState = ListenerState(false, Set.empty, Set.empty)
+  var state: ListenerState = null
+
+  var connection = null
 
   override def persistenceId: String = "Listener-" + self.path.name
 
@@ -45,6 +47,9 @@ class ServerConnectionListener(connectionFactory: ChatConnectionFactory) extends
   }
 
   private def updateState(msg: Any) = msg match {
+    case Initialize(connectionFactory, connectionDesc) =>
+      state = ListenerState(false, connectionFactory, connectionDesc, Set.empty, Set.empty)
+      saveSnapshot(state)
     case Start =>
       startListener()
       state = state.copy(running = true)
@@ -52,7 +57,7 @@ class ServerConnectionListener(connectionFactory: ChatConnectionFactory) extends
 
     case Stop =>
       stopListener()
-      state = ListenerState(false, Set.empty, Set.empty)
+      state = state.copy(running = false)
       saveSnapshot(state)
 
     case RegisterObserver(ref) =>
@@ -70,6 +75,10 @@ class ServerConnectionListener(connectionFactory: ChatConnectionFactory) extends
       leaveChannel(name).foreach {
         _ => state = state.copy(channels = state.channels - name)
       }
+
+    case SendChannelMessage(channel: String, msg: String) =>
+
+    case SendPrivateMessage(user: String, msg: String) =>
   }
 
   private def startListener() {
@@ -98,7 +107,7 @@ class ServerConnectionListener(connectionFactory: ChatConnectionFactory) extends
   }
 
   def notifyResult(result: Try[_], successMsg: Any, failureMsg: Any) {
-    if(result.isSuccess) notifyObservers(successMsg)
+    if (result.isSuccess) notifyObservers(successMsg)
     else notifyObservers(failureMsg)
   }
 
@@ -112,7 +121,9 @@ class ServerConnectionListener(connectionFactory: ChatConnectionFactory) extends
 
 object ServerConnectionListener {
 
-  private case class ListenerState(running: Boolean, channels: Set[String], observers: Set[Observer])
+  private case class ListenerState(running: Boolean, connectionFactory: ChatConnectionFactory, connectionDesc: ChatConnectionDesc, channels: Set[String], observers: Set[Observer])
+
+  case class Initialize(connectionFactory: ChatConnectionFactory, connectionDesc: ChatConnectionDesc)
 
   object Start
 
@@ -135,5 +146,13 @@ object ServerConnectionListener {
   case class LeftChannel(name: String)
 
   case class FailedToLeaveChannel(name: String)
+
+  case class SendChannelMessage(channel: String, msg: String)
+
+  case class SendPrivateMessage(user: String, msg: String)
+
+  case class ChannelMessageReceived(channel: String, msg: String)
+
+  case class PrivateMessageReceived(user: String, msg: String)
 
 }
