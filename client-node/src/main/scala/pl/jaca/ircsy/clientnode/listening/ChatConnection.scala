@@ -1,14 +1,19 @@
 package pl.jaca.ircsy.clientnode.listening
 
-import java.util.Observable
+
 
 import pl.jaca.ircsy.clientnode.listening.ChatConnection.{PrivateMessage, ChannelMessage}
+import rx.lang.scala.Observable
 
 /**
   * @author Jaca777
   *         Created 2016-05-01 at 17
   */
 abstract class ChatConnection {
+  def connectTo(connectionDesc: ChatConnectionDesc)
+  def disconnect()
+  def joinChannel(name: String)
+  def leaveChannel(name: String)
   def sendChannelMessage(channel: String, msg: String)
   def sendPrivateMessage(user: String, msg: String)
   def channelMessages: Observable[ChannelMessage]
