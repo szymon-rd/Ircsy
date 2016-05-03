@@ -7,5 +7,5 @@ import pl.jaca.ircsy.clientnode.listening.{ChatConnection, ChatConnectionFactory
   *         Created 2016-05-02 at 13
   */
 class IrcConnectionFactory extends ChatConnectionFactory{
-  override def getConnection(): ChatConnection = new IrcConnection
+  override def newConnection(): ChatConnection = new IrcConnection
 }

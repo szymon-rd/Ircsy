@@ -10,15 +10,20 @@ import org.scalatest.mockito.MockitoSugar
 import org.mockito.Mockito._
 import org.scalatest.WordSpecLike
 import pl.jaca.ircsy.clientnode.listening.ChatConnectionObservableProxy.{Start, Stop, Initialize}
-import pl.jaca.ircsy.clientnode.listening.ConnectionProxyRegionCoordinator.{ForwardToListener, StartListener}
+import pl.jaca.ircsy.clientnode.listening.ConnectionProxyRegionCoordinator.{StopProxy, ForwardToProxy, StartProxy}
 import pl.jaca.ircsy.util.test.MoreMockitoSugar
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 /**
   * @author Jaca777
   *         Created 2016-05-02 at 00
   */
-class ConnectionListenerRegionCoordinatorSpec extends TestKit(ActorSystem("ConnectionListenerRegionCoordinatorSpec")) with WordSpecLike with MockitoSugar with MoreMockitoSugar {
-  "ConnectionListenerRegionCoordinator" should {
+class ConnectionProxyRegionCoordinatorSpec extends TestKit(ActorSystem("ConnectionProxyRegionCoordinatorSpec")) with WordSpecLike with MockitoSugar with MoreMockitoSugar {
+
+  val testDesc: ChatConnectionDesc = ChatConnectionDesc("foo", 42, "bar")
+
+  "ConnectionProxyRegionCoordinator" should {
 
     "resolve region if exists" in {
       val sharding = mock[ClusterSharding]
@@ -43,27 +48,43 @@ class ConnectionListenerRegionCoordinatorSpec extends TestKit(ActorSystem("Conne
         equal(Start))
     }
 
-    "start new listeners" in {
+
+    "start new proxy" in {
       val shardingProbe = TestProbe()
       val sharding = mock[ClusterSharding]
       when(sharding.shardRegion("Proxy")).thenReturn(shardingProbe.ref)
 
       val factory = mock[ChatConnectionFactory]
       val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, factory))
-      coordinator ! StartListener(ChatConnectionDesc("foo", 23, "bar"))
+      coordinator ! StartProxy(testDesc)
 
-      shardingProbe.expectMsg(ForwardToListener(ChatConnectionDesc("foo", 23, "bar"), Initialize(ChatConnectionDesc("foo", 23, "bar"), factory)))
+      shardingProbe.expectMsg(ForwardToProxy(testDesc, Initialize(testDesc, factory)))
+      shardingProbe.expectMsg(ForwardToProxy(testDesc, Start))
     }
 
-    "forward message to listener" in {
+    "forward message to proxy" in {
       val shardingProbe = TestProbe()
       val sharding = mock[ClusterSharding]
       when(sharding.shardRegion("Proxy")).thenReturn(shardingProbe.ref)
 
       val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, mock[ChatConnectionFactory]))
-      coordinator ! ForwardToListener(ChatConnectionDesc("foo", 23, "bar"), 2)
+      coordinator ! ForwardToProxy(testDesc, 2)
 
-      shardingProbe.expectMsg(ForwardToListener(ChatConnectionDesc("foo", 23, "bar"), 2))
+      shardingProbe.expectMsg(ForwardToProxy(testDesc, 2))
+    }
+
+    "stop proxy" in {
+      val shardingProbe = TestProbe()
+      val sharding = mock[ClusterSharding]
+      when(sharding.shardRegion("Proxy")).thenReturn(shardingProbe.ref)
+
+      val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, mock[ChatConnectionFactory]))
+      coordinator ! StartProxy(testDesc)
+      shardingProbe.fishForMessage(max = 1 second) {case msg: ForwardToProxy => true} //Init
+      shardingProbe.fishForMessage(max = 1 second) {case msg: ForwardToProxy => true}//Start
+      coordinator ! StopProxy(testDesc)
+      shardingProbe.expectMsg(ForwardToProxy(testDesc, Stop))
     }
   }
+
 }

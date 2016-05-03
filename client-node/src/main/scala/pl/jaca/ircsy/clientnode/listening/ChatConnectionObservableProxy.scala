@@ -1,7 +1,7 @@
 package pl.jaca.ircsy.clientnode.listening
 
 import akka.actor.ActorRef
-import akka.persistence.{PersistentActor, SnapshotOffer}
+import akka.persistence.{Recovery, AtLeastOnceDelivery, PersistentActor, SnapshotOffer}
 import pl.jaca.ircsy.clientnode.listening.ChatConnection.{PrivateMessage, ChannelMessage}
 import pl.jaca.ircsy.clientnode.listening.ChatConnectionObservableProxy._
 import rx.lang.scala.{Subject, Subscription}
@@ -13,6 +13,7 @@ import scala.util.Try
   *         Created 2016-05-01 at 17
   */
 class ChatConnectionObservableProxy extends PersistentActor {
+
 
   var state: ListenerState = null
 
@@ -59,7 +60,7 @@ class ChatConnectionObservableProxy extends PersistentActor {
 
   private def initialize(connectionDesc: ChatConnectionDesc, connectionFactory: ChatConnectionFactory) {
     state = ListenerState(false, connectionDesc, connectionFactory, Set.empty, Set.empty)
-    connection = connectionFactory.getConnection()
+    connection = connectionFactory.newConnection()
     saveSnapshot(state)
   }
 
