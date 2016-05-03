@@ -1,17 +1,17 @@
-package pl.jaca.ircsy.clientnode.listening
+package pl.jaca.ircsy.clientnode.connection
 
 import akka.actor.{ActorSystem, Props}
 import akka.cluster.sharding.ShardCoordinator.ShardAllocationStrategy
-import akka.cluster.sharding.{ShardRegion, ClusterShardingSettings, ClusterSharding}
-import akka.testkit.{TestProbe, TestActorRef, TestKit}
-
-import org.mockito.Matchers
-import org.scalatest.mockito.MockitoSugar
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
+import akka.testkit.{TestActorRef, TestKit, TestProbe}
 import org.mockito.Mockito._
 import org.scalatest.WordSpecLike
-import pl.jaca.ircsy.clientnode.listening.ChatConnectionObservableProxy.{Start, Stop, Initialize}
-import pl.jaca.ircsy.clientnode.listening.ConnectionProxyRegionCoordinator.{StopProxy, ForwardToProxy, StartProxy}
+import org.scalatest.mockito.MockitoSugar
+import pl.jaca.ircsy.clientnode.connection.ChatConnectionObservableProxy.{Start, Stop}
+import pl.jaca.ircsy.clientnode.connection.ChatConnectionObservableProxySupervisor.Initialize
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{ForwardToProxy, StartProxy, StopProxy}
 import pl.jaca.ircsy.util.test.MoreMockitoSugar
+
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -40,7 +40,7 @@ class ConnectionProxyRegionCoordinatorSpec extends TestKit(ActorSystem("Connecti
 
       verify(sharding).start(
         equal("Proxy"),
-        equal(Props[ChatConnectionObservableProxy]),
+        equal(Props[ChatConnectionObservableProxySupervisor]),
         any[ClusterShardingSettings],
         any[ShardRegion.ExtractEntityId],
         any[ShardRegion.ExtractShardId],

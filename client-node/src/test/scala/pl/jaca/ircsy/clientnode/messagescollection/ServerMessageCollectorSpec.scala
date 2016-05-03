@@ -10,6 +10,8 @@ import pl.jaca.ircsy.util.test.MoreMockitoSugar
   * @author Jaca777
   *         Created 2016-05-02 at 12
   */
-class ServerMessageCollectorSpec extends TestKit(ActorSystem("ClientNodeReceptionistSpec")) with WordSpecLike with MockitoSugar with MoreMockitoSugar {
+class ServerMessageCollectorSpec extends TestKit(ActorSystem("ServerMessageCollectorSpec")) with WordSpecLike with MockitoSugar with MoreMockitoSugar {
+  "ServerMessageCollector" should {
 
+  }
 }

@@ -1,9 +1,9 @@
-package pl.jaca.ircsy.clientnode.listening.irc
+package pl.jaca.ircsy.clientnode.connection.irc
 
 import java.util.Observable
 
-import pl.jaca.ircsy.clientnode.listening.{ChatConnectionDesc, ChatConnection}
-import pl.jaca.ircsy.clientnode.listening.ChatConnection.{ChannelMessage, PrivateMessage}
+import pl.jaca.ircsy.clientnode.connection.{ChatConnectionDesc, ChatConnection}
+import pl.jaca.ircsy.clientnode.connection.ChatConnection.{Notification, ChannelMessage, PrivateMessage}
 import rx.lang.scala
 
 /**
@@ -22,6 +22,8 @@ class IrcConnection extends ChatConnection{
   override def joinChannel(name: String): Unit = ???
 
   override def privateMessages: scala.Observable[PrivateMessage] = ???
+
+  override def notifications: scala.Observable[Notification] = ???
 
   override def sendChannelMessage(channel: String, msg: String): Unit = ???
 

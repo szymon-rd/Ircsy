@@ -1,6 +1,6 @@
-package pl.jaca.ircsy.clientnode.listening.irc
+package pl.jaca.ircsy.clientnode.connection.irc
 
-import pl.jaca.ircsy.clientnode.listening.{ChatConnection, ChatConnectionFactory}
+import pl.jaca.ircsy.clientnode.connection.{ChatConnection, ChatConnectionFactory}
 
 /**
   * @author Jaca777

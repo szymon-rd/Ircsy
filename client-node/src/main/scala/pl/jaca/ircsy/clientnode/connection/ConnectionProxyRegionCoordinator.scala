@@ -1,4 +1,4 @@
-package pl.jaca.ircsy.clientnode.listening
+package pl.jaca.ircsy.clientnode.connection
 
 import java.security.MessageDigest
 
@@ -7,8 +7,9 @@ import akka.cluster.sharding.ShardCoordinator.LeastShardAllocationStrategy
 import akka.cluster.sharding.ShardRegion.{EntityId, ShardId}
 import akka.cluster.sharding.{ShardCoordinator, ShardRegion, ClusterSharding, ClusterShardingSettings}
 import akka.persistence.PersistentActor
-import pl.jaca.ircsy.clientnode.listening.ConnectionProxyRegionCoordinator.{StopProxy, ShardIdLength, ForwardToProxy, StartProxy}
-import pl.jaca.ircsy.clientnode.listening.ChatConnectionObservableProxy.{Stop, Initialize, Start}
+import pl.jaca.ircsy.clientnode.connection.ChatConnectionObservableProxySupervisor.Initialize
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{StopProxy, ShardIdLength, ForwardToProxy, StartProxy}
+import pl.jaca.ircsy.clientnode.connection.ChatConnectionObservableProxy.{Stop, Start}
 
 /**
   * @author Jaca777
@@ -54,7 +55,7 @@ class ConnectionProxyRegionCoordinator(sharding: ClusterSharding, connectionFact
 
   private def startRegion() = sharding.start(
     typeName = "Proxy",
-    entityProps = Props[ChatConnectionObservableProxy],
+    entityProps = Props[ChatConnectionObservableProxySupervisor],
     settings = settings,
     extractEntityId = extractEntityId,
     extractShardId = extractShardId,

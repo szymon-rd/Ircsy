@@ -1,8 +1,8 @@
-package pl.jaca.ircsy.clientnode.listening
+package pl.jaca.ircsy.clientnode.connection
 
 
 
-import pl.jaca.ircsy.clientnode.listening.ChatConnection.{PrivateMessage, ChannelMessage}
+import pl.jaca.ircsy.clientnode.connection.ChatConnection.{Notification, PrivateMessage, ChannelMessage}
 import rx.lang.scala.Observable
 
 /**
@@ -18,8 +18,10 @@ abstract class ChatConnection {
   def sendPrivateMessage(user: String, msg: String)
   def channelMessages: Observable[ChannelMessage]
   def privateMessages: Observable[PrivateMessage]
+  def notifications: Observable[Notification]
 }
 object ChatConnection {
   case class ChannelMessage(channel: String, msg: String)
   case class PrivateMessage(user: String, msg: String)
+  case class Notification(msg: String)
 }

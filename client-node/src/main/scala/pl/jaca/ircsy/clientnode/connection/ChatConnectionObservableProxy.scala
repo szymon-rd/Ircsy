@@ -1,9 +1,9 @@
-package pl.jaca.ircsy.clientnode.listening
+package pl.jaca.ircsy.clientnode.connection
 
 import akka.actor.ActorRef
 import akka.persistence.{Recovery, AtLeastOnceDelivery, PersistentActor, SnapshotOffer}
-import pl.jaca.ircsy.clientnode.listening.ChatConnection.{PrivateMessage, ChannelMessage}
-import pl.jaca.ircsy.clientnode.listening.ChatConnectionObservableProxy._
+import pl.jaca.ircsy.clientnode.connection.ChatConnection.{PrivateMessage, ChannelMessage}
+import pl.jaca.ircsy.clientnode.connection.ChatConnectionObservableProxy._
 import rx.lang.scala.{Subject, Subscription}
 
 import scala.util.Try
@@ -12,14 +12,14 @@ import scala.util.Try
   * @author Jaca777
   *         Created 2016-05-01 at 17
   */
-class ChatConnectionObservableProxy extends PersistentActor {
+class ChatConnectionObservableProxy(connectionDesc: ChatConnectionDesc, connectionFactory: ChatConnectionFactory) extends PersistentActor {
 
 
-  var state: ListenerState = null
+  var state: ListenerState = ListenerState(false, connectionDesc, connectionFactory, Set.empty, Set.empty)
 
-  var connection: ChatConnection = null
+  var connection: ChatConnection = connectionFactory.newConnection()
 
-  override def persistenceId: String = "Proxy-" + self.path.name
+  override def persistenceId: String = "Proxy-" + connectionDesc.toString
 
   override def receiveRecover: Receive = {
     case SnapshotOffer(_, offeredState: ListenerState) =>
@@ -38,8 +38,6 @@ class ChatConnectionObservableProxy extends PersistentActor {
   }
 
   override def receiveCommand: Receive = {
-    case Initialize(desc, factory) =>
-      initialize(desc, factory)
     case Start =>
       persist(Start)(_ => start())
     case Stop =>
@@ -56,12 +54,6 @@ class ChatConnectionObservableProxy extends PersistentActor {
       connection.sendChannelMessage(channel, msg)
     case SendPrivateMessage(user, msg) =>
       connection.sendPrivateMessage(user, msg)
-  }
-
-  private def initialize(connectionDesc: ChatConnectionDesc, connectionFactory: ChatConnectionFactory) {
-    state = ListenerState(false, connectionDesc, connectionFactory, Set.empty, Set.empty)
-    connection = connectionFactory.newConnection()
-    saveSnapshot(state)
   }
 
   private def start() {
@@ -155,8 +147,6 @@ object ChatConnectionObservableProxy {
   }
 
   private[ChatConnectionObservableProxy] case class ListenerState(running: Boolean, connectionDesc: ChatConnectionDesc, connectionFactory: ChatConnectionFactory, channels: Set[String], observers: Set[Observer])
-
-  case class Initialize(connectionDesc: ChatConnectionDesc, connectionFactory: ChatConnectionFactory)
 
   case class ConnectedToServer(connectionDesc: ChatConnectionDesc)
 

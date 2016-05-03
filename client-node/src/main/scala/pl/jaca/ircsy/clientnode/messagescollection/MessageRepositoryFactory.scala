@@ -2,8 +2,8 @@ package pl.jaca.ircsy.clientnode.messagescollection
 
 /**
   * @author Jaca777
-  *         Created 2016-05-01 at 23
+  *         Created 2016-05-03 at 19
   */
-class ServerMessageCollector {
+class MessageRepositoryFactory {
 
 }

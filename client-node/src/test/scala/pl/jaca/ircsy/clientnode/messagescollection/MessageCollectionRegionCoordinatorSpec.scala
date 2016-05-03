@@ -10,6 +10,8 @@ import pl.jaca.ircsy.util.test.MoreMockitoSugar
   * @author Jaca777
   *         Created 2016-05-02 at 12
   */
-class MessageCollectionCoordinatorSpec extends TestKit(ActorSystem("MessageCollectionCoordinatorSpec")) with WordSpecLike with MockitoSugar with MoreMockitoSugar {
+class MessageCollectionRegionCoordinatorSpec extends TestKit(ActorSystem("MessageCollectionRegionCoordinatorSpec")) with WordSpecLike with MockitoSugar with MoreMockitoSugar {
+  "MessageCollectionRegionCoordinator" should {
 
+  }
 }

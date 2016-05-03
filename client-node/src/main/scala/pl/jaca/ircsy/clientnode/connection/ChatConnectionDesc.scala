@@ -1,4 +1,4 @@
-package pl.jaca.ircsy.clientnode.listening
+package pl.jaca.ircsy.clientnode.connection
 
 /**
   * @author Jaca777
