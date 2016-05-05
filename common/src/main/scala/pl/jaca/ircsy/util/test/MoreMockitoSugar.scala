@@ -11,5 +11,5 @@ import scala.reflect.ClassTag
 trait MoreMockitoSugar {
   def any[T](implicit typeTag: ClassTag[T]): T =
     Matchers.any[T](typeTag.runtimeClass.asInstanceOf[Class[T]])
-  def equal[T](t: T) = Matchers.eq(t)
+  def equal[T](t: T): T = Matchers.eq(t)
 }
