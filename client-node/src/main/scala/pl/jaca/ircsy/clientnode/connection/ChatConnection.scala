@@ -2,14 +2,14 @@ package pl.jaca.ircsy.clientnode.connection
 
 
 
-import pl.jaca.ircsy.clientnode.connection.ChatConnection.{Notification, PrivateMessage, ChannelMessage}
+import pl.jaca.ircsy.clientnode.connection.messages.{Notification, ChannelMessage, PrivateMessage}
 import rx.lang.scala.Observable
 
 /**
   * @author Jaca777
   *         Created 2016-05-01 at 17
   */
-abstract class ChatConnection {
+trait ChatConnection {
   def connectTo(connectionDesc: ConnectionDesc)
   def disconnect()
   def joinChannel(name: String)
@@ -19,9 +19,4 @@ abstract class ChatConnection {
   def channelMessages: Observable[ChannelMessage]
   def privateMessages: Observable[PrivateMessage]
   def notifications: Observable[Notification]
-}
-object ChatConnection {
-  case class ChannelMessage(channel: String, msg: String)
-  case class PrivateMessage(user: String, msg: String)
-  case class Notification(msg: String)
 }

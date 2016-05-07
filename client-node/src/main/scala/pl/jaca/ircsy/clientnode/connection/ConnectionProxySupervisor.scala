@@ -41,8 +41,4 @@ object ConnectionProxySupervisor {
 
   case class InitializeConnection(connectionDesc: ConnectionDesc, connectionFactory: ChatConnectionFactory)
 
-  case class ConnectionToChannelFound(desc: ConnectionDesc)
-
-  object ConnectionToChannelNotFound
-
 }

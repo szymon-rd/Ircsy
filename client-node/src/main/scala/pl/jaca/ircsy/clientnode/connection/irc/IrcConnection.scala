@@ -2,8 +2,8 @@ package pl.jaca.ircsy.clientnode.connection.irc
 
 import java.util.Observable
 
+import pl.jaca.ircsy.clientnode.connection.messages.{Notification, PrivateMessage, ChannelMessage}
 import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ChatConnection}
-import pl.jaca.ircsy.clientnode.connection.ChatConnection.{Notification, ChannelMessage, PrivateMessage}
 import rx.lang.scala
 
 /**

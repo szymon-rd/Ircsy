@@ -1,6 +1,6 @@
 package pl.jaca.ircsy.irc
 
-import chat.{Server, ServerDesc, ChatUniverse}
+import pl.jaca.ircsy.chat.{ServerDesc, Server, ChatUniverse}
 
 /**
   * @author Jaca777

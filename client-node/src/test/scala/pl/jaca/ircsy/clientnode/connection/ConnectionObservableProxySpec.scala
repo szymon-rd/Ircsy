@@ -49,7 +49,7 @@ class ConnectionObservableProxySpec extends {
       (connection.connectTo _).expects(*)
       (connection.joinChannel _).expects(*)
       val proxy = system.actorOf(Props(new ConnectionObservableProxy(testDesc, factory)))
-      proxy ! RegisterObserver(Observer(testActor, ClassFilterSubject(classOf[JoinedChannel], classOf[FailedToJoinChannel])))
+      proxy ! RegisterObserver(Observer(testActor, Set(ClassFilterSubject(classOf[JoinedChannel], classOf[FailedToJoinChannel]))))
       proxy ! Start
       proxy ! JoinChannel("channel")
       expectMsg(JoinedChannel("channel"))
@@ -64,7 +64,7 @@ class ConnectionObservableProxySpec extends {
       (connection.privateMessages _).expects().returns(Observable.empty)
       (connection.joinChannel _).expects(*).throws(new RuntimeException())
       val proxy = system.actorOf(Props(new ConnectionObservableProxy(testDesc, factory)))
-      proxy ! RegisterObserver(Observer(testActor, ClassFilterSubject(classOf[JoinedChannel], classOf[FailedToJoinChannel])))
+      proxy ! RegisterObserver(Observer(testActor, Set(ClassFilterSubject(classOf[JoinedChannel], classOf[FailedToJoinChannel]))))
       proxy ! Start
       proxy ! JoinChannel("channel")
       expectMsg(FailedToJoinChannel("channel"))

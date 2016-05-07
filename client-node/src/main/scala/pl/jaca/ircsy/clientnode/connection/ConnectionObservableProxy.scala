@@ -2,10 +2,10 @@ package pl.jaca.ircsy.clientnode.connection
 
 import akka.actor.ActorRef
 import akka.persistence.{Recovery, AtLeastOnceDelivery, PersistentActor, SnapshotOffer}
-import pl.jaca.ircsy.clientnode.connection.ChatConnection.{PrivateMessage, ChannelMessage}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
+import pl.jaca.ircsy.clientnode.connection.messages.{ChannelMessage, PrivateMessage}
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol._
-import rx.lang.scala.{Subject, Subscription}
+import rx.lang.scala.{Observable, Subject, Subscription}
 
 import scala.util.Try
 
@@ -82,7 +82,7 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
 
   private def registerObserver(observer: Observer) {
     state = state.copy(observers = state.observers + observer)
-    if(observer.subjects.exists(_ isInterestedIn state))
+    if (observer.subjects.exists(_ isInterestedIn state))
       observer.ref ! state
   }
 
@@ -115,14 +115,16 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
   }
 
   private def startNotifying() = {
-    connection.channelMessages.foreach {
-      case ChannelMessage(channel, msg) =>
-        notifyObservers(ChannelMessageReceived(channel, msg))
-    }
-    connection.privateMessages.foreach {
-      case PrivateMessage(user, msg) =>
-        notifyObservers(PrivateMessageReceived(user, msg))
-    }
+    val channelMessageNotifications = connection
+      .channelMessages
+      .map(ChannelMessageReceived)
+
+    val privateMessageNotifications = connection
+      .privateMessages
+      .map(PrivateMessageReceived)
+
+    (channelMessageNotifications merge privateMessageNotifications)
+      .foreach(notifyObservers)
   }
 
   def notifyResult(result: Try[_], successMsg: Any, failureMsg: FailureNotification) {
@@ -153,7 +155,7 @@ object ConnectionObservableProxy {
 
   case class ChannelSubject(channelName: String) extends ObserverSubject {
     override def isInterestedIn(notification: Any): Boolean = notification match {
-      case ChannelMessageReceived(`channelName`, _) => true
+      case ChannelMessageReceived(ChannelMessage(`channelName`, _, _, _)) => true
       case LeftChannel(`channelName`) => true
     }
   }
@@ -184,8 +186,8 @@ object ConnectionObservableProxy {
 
   case class SendPrivateMessage(user: String, msg: String)
 
-  case class ChannelMessageReceived(channel: String, msg: String)
+  case class ChannelMessageReceived(channelMessage: ChannelMessage)
 
-  case class PrivateMessageReceived(user: String, msg: String)
+  case class PrivateMessageReceived(privateMessage: PrivateMessage)
 
 }

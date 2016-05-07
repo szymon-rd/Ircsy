@@ -1,4 +1,4 @@
-package pl.jaca.ircsy.clientnode.messagescollection
+package pl.jaca.ircsy.clientnode.messagecollection
 
 import akka.actor.{ActorRef, ExtendedActorSystem, Props, ActorSystem}
 import akka.cluster.sharding.ShardCoordinator.ShardAllocationStrategy

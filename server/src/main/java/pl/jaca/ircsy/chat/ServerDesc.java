@@ -1,4 +1,4 @@
-package chat;
+package pl.jaca.ircsy.chat;
 
 /**
  * @author Jaca777

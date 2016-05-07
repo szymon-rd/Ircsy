@@ -1,4 +1,4 @@
-package chat;
+package pl.jaca.ircsy.chat;
 
 import java.time.LocalDate;
 import java.util.List;

@@ -1,4 +1,4 @@
-package pl.jaca.ircsy.clientnode.messagescollection
+package pl.jaca.ircsy.clientnode.messagecollection
 
 import akka.cluster.sharding.ShardRegion
 

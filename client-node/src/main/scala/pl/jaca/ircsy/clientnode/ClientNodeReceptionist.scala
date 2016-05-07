@@ -4,7 +4,7 @@ import akka.actor.{Actor, Props}
 import akka.cluster.sharding.ClusterSharding
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator
 import pl.jaca.ircsy.clientnode.connection.irc.IrcConnectionFactory
-import pl.jaca.ircsy.clientnode.messagescollection.MessageCollectionRegionCoordinator
+import pl.jaca.ircsy.clientnode.messagecollection.MessageCollectionRegionCoordinator
 import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterShardingImpl
 
 /**

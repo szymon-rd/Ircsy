@@ -7,7 +7,7 @@ import akka.actor.ActorRef
   *         Created 2016-05-04 at 20
   */
 object ObservableActorProtocol {
-  case class Observer(ref: ActorRef, subjects: ObserverSubject*)
+  case class Observer(ref: ActorRef, subjects: Set[ObserverSubject])
 
 
   abstract class ObserverSubject {
