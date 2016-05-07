@@ -10,7 +10,7 @@ import rx.lang.scala.Observable
   *         Created 2016-05-01 at 17
   */
 abstract class ChatConnection {
-  def connectTo(connectionDesc: ChatConnectionDesc)
+  def connectTo(connectionDesc: ConnectionDesc)
   def disconnect()
   def joinChannel(name: String)
   def leaveChannel(name: String)

@@ -7,15 +7,16 @@ import akka.cluster.sharding.ShardCoordinator.LeastShardAllocationStrategy
 import akka.cluster.sharding.ShardRegion.{EntityId, ShardId}
 import akka.cluster.sharding.{ShardCoordinator, ShardRegion, ClusterSharding, ClusterShardingSettings}
 import akka.persistence.PersistentActor
-import pl.jaca.ircsy.clientnode.connection.ChatConnectionObservableProxySupervisor.Initialize
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.InitializeConnection
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{StopProxy, ShardIdLength, ForwardToProxy, StartProxy}
-import pl.jaca.ircsy.clientnode.connection.ChatConnectionObservableProxy.{Stop, Start}
+import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{Stop, Start}
+import pl.jaca.ircsy.clientnode.sharding.{RegionAwareClusterSharding, RegionAwareClusterShardingImpl}
 
 /**
   * @author Jaca777
   *         Created 2016-05-01 at 23
   */
-class ConnectionProxyRegionCoordinator(sharding: ClusterSharding, connectionFactory: ChatConnectionFactory) extends Actor {
+class ConnectionProxyRegionCoordinator(sharding: RegionAwareClusterSharding, connectionFactory: ChatConnectionFactory) extends Actor {
 
   val extractEntityId: ShardRegion.ExtractEntityId = {
     case ForwardToProxy(desc, msg) =>
@@ -23,48 +24,31 @@ class ConnectionProxyRegionCoordinator(sharding: ClusterSharding, connectionFact
 
   }
 
-  private def toListenerId(desc: ChatConnectionDesc): EntityId = desc.toString
+  private def toListenerId(desc: ConnectionDesc): EntityId = desc.toString
 
   val extractShardId: ShardRegion.ExtractShardId = {
     case ForwardToProxy(desc, msg) =>
       toShardId(desc)
   }
 
-  private def toShardId(desc: ChatConnectionDesc): ShardId = {
+  private def toShardId(desc: ConnectionDesc): ShardId = {
     val md5Digest: MessageDigest = MessageDigest.getInstance("MD5")
     val listenerId: Array[Byte] = toListenerId(desc).getBytes
     val md5: Array[Byte] = md5Digest.digest(listenerId)
     new String(md5.take(ShardIdLength))
   }
 
-  val listenerRegion: ActorRef = {
-    try {
-      resolveRegion()
-    } catch {
-      case _: IllegalArgumentException => startRegion()
-    }
-  }
-
-  private def resolveRegion() = sharding.shardRegion("Proxy")
-
-  val settings = ClusterShardingSettings(context.system)
-
-  val allocationStrategy = new LeastShardAllocationStrategy(
-    settings.tuningParameters.leastShardAllocationRebalanceThreshold,
-    settings.tuningParameters.leastShardAllocationMaxSimultaneousRebalance)
-
-  private def startRegion() = sharding.start(
-    typeName = "Proxy",
-    entityProps = Props[ChatConnectionObservableProxySupervisor],
-    settings = settings,
-    extractEntityId = extractEntityId,
-    extractShardId = extractShardId,
-    allocationStrategy = allocationStrategy,
-    Start)
+  val listenerRegion = sharding.findOrStartRegion(
+    system = context.system,
+    typeName = "ConnectionProxy",
+    entityProps = Props[ConnectionProxySupervisor],
+    entityIdExtractor = extractEntityId,
+    shardIdExtractor = extractShardId,
+    stopMessage = Stop)
 
   override def receive: Receive = {
     case StartProxy(desc) =>
-      listenerRegion ! ForwardToProxy(desc, Initialize(desc,connectionFactory))
+      listenerRegion ! ForwardToProxy(desc, InitializeConnection(desc,connectionFactory))
       listenerRegion ! ForwardToProxy(desc, Start)
     case StopProxy(desc) =>
       listenerRegion ! ForwardToProxy(desc, Stop)
@@ -76,10 +60,10 @@ class ConnectionProxyRegionCoordinator(sharding: ClusterSharding, connectionFact
 object ConnectionProxyRegionCoordinator {
   private val ShardIdLength = 3
 
-  case class StartProxy(desc: ChatConnectionDesc)
+  case class StartProxy(desc: ConnectionDesc)
 
-  case class StopProxy(desc: ChatConnectionDesc)
+  case class StopProxy(desc: ConnectionDesc)
 
-  case class ForwardToProxy(desc: ChatConnectionDesc, msg: Any)
+  case class ForwardToProxy(desc: ConnectionDesc, msg: Any)
 
 }

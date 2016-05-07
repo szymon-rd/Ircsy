@@ -1,11 +1,11 @@
 package pl.jaca.ircsy.clientnode
 
-import akka.actor.{Props, Actor}
-import akka.cluster.Cluster
+import akka.actor.{Actor, Props}
 import akka.cluster.sharding.ClusterSharding
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator
 import pl.jaca.ircsy.clientnode.connection.irc.IrcConnectionFactory
-import pl.jaca.ircsy.clientnode.connection.{ConnectionProxyRegionCoordinator, ChatConnectionObservableProxy}
 import pl.jaca.ircsy.clientnode.messagescollection.MessageCollectionRegionCoordinator
+import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterShardingImpl
 
 /**
   * @author Jaca777
@@ -15,9 +15,9 @@ class ClientNodeReceptionist extends Actor {
 
   val sharding = ClusterSharding(context.system)
 
-  val proxyCoordinator = context.actorOf(Props(new ConnectionProxyRegionCoordinator(sharding, new IrcConnectionFactory)))
+  val proxyCoordinator = context.actorOf(Props(new ConnectionProxyRegionCoordinator(new RegionAwareClusterShardingImpl(sharding), new IrcConnectionFactory)))
 
-  val messageCollectionCoordinator = context.actorOf(Props(new MessageCollectionRegionCoordinator))
+  val messageCollectionCoordinator = context.actorOf(Props(new MessageCollectionRegionCoordinator(new RegionAwareClusterShardingImpl(sharding), null)))
 
   override def receive: Actor.Receive = {
     case _ =>

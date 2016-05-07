@@ -9,7 +9,7 @@ import rx.subjects.Subject
   *         Created 2016-04-30 at 18
   */
 class UserMessageDispatcher(toObserve: ActorRef) {
-  val messageSubject = Subject[Message]
+
 
 }
 object UserMessageDispatcher {

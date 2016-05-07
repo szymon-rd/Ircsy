@@ -1,17 +1,23 @@
 package pl.jaca.ircsy.clientnode.connection
 
-import akka.actor.{ActorSystem, Props}
-import akka.cluster.sharding.ShardCoordinator.ShardAllocationStrategy
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
-import akka.testkit.{TestActorRef, TestKit, TestProbe}
-import org.mockito.Mockito._
-import org.scalatest.WordSpecLike
-import org.scalatest.mockito.MockitoSugar
-import pl.jaca.ircsy.clientnode.connection.ChatConnectionObservableProxy.{Start, Stop}
-import pl.jaca.ircsy.clientnode.connection.ChatConnectionObservableProxySupervisor.Initialize
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{ForwardToProxy, StartProxy, StopProxy}
-import pl.jaca.ircsy.util.test.MoreMockitoSugar
+import java.util.concurrent.ThreadFactory
 
+import akka.actor.ActorSystem.Settings
+import akka.actor._
+import akka.cluster.sharding.ShardCoordinator.ShardAllocationStrategy
+import akka.cluster.sharding.ShardRegion.{MessageExtractor, ExtractShardId, ExtractEntityId}
+import akka.cluster.sharding.{ClusterShardingSettings, ClusterSharding}
+import akka.dispatch.{Dispatchers, Mailboxes}
+import akka.event.{LoggingFilter, LoggingAdapter, EventStream}
+import akka.testkit._
+import org.scalamock.scalatest.MockFactory
+import org.scalatest._
+import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{Start, Stop}
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{ForwardToProxy, StartProxy, StopProxy}
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.InitializeConnection
+import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterSharding
+
+import scala.concurrent.{Future, ExecutionContextExecutor}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -19,53 +25,53 @@ import scala.language.postfixOps
   * @author Jaca777
   *         Created 2016-05-02 at 00
   */
-class ConnectionProxyRegionCoordinatorSpec extends TestKit(ActorSystem("ConnectionProxyRegionCoordinatorSpec")) with WordSpecLike with MockitoSugar with MoreMockitoSugar {
+class ConnectionProxyRegionCoordinatorSpec extends {
+  implicit val system = ActorSystem("ConnectionProxyRegionCoordinatorSpec")
+} with WordSpec with TestKitBase with Matchers with MockFactory {
 
-  val testDesc: ChatConnectionDesc = ChatConnectionDesc("foo", 42, "bar")
+
+
+  val testDesc: ConnectionDesc = ConnectionDesc(ServerDesc("foo", 42), "bar")
+
 
   "ConnectionProxyRegionCoordinator" should {
 
-    "resolve region if exists" in {
-      val sharding = mock[ClusterSharding]
-      TestActorRef(new ConnectionProxyRegionCoordinator(sharding, null))
+    class MockableClusterSharding extends ClusterSharding(null) {
+      override def start(typeName: String,
+                         entityProps: Props,
+                         settings: ClusterShardingSettings,
+                         messageExtractor: MessageExtractor,
+                         allocationStrategy: ShardAllocationStrategy,
+                         handOffStopMessage: Any): ActorRef = started(typeName, entityProps, handOffStopMessage)
 
-      verify(sharding).shardRegion(equal("Proxy"))
+      def started(name: String, props: Props, handOffStopMessage: Any) = null
     }
 
-    "start sharding region if doesn't exist " in {
-      val sharding = mock[ClusterSharding]
-      when(sharding.shardRegion(any[String])).thenThrow(new IllegalArgumentException)
-
+    "start region" in {
+      val sharding = mock[RegionAwareClusterSharding]
+      (sharding.findOrStartRegion _).expects(system, "ConnectionProxy", *, *, *, Stop)
       TestActorRef(new ConnectionProxyRegionCoordinator(sharding, null))
-
-      verify(sharding).start(
-        equal("Proxy"),
-        equal(Props[ChatConnectionObservableProxySupervisor]),
-        any[ClusterShardingSettings],
-        any[ShardRegion.ExtractEntityId],
-        any[ShardRegion.ExtractShardId],
-        any[ShardAllocationStrategy],
-        equal(Start))
     }
+
 
 
     "start new proxy" in {
       val shardingProbe = TestProbe()
-      val sharding = mock[ClusterSharding]
-      when(sharding.shardRegion("Proxy")).thenReturn(shardingProbe.ref)
+      val sharding = mock[RegionAwareClusterSharding]
+      (sharding.findOrStartRegion _).expects(*,*,*,*,*,*).returns(shardingProbe.ref)
 
       val factory = mock[ChatConnectionFactory]
       val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, factory))
       coordinator ! StartProxy(testDesc)
 
-      shardingProbe.expectMsg(ForwardToProxy(testDesc, Initialize(testDesc, factory)))
+      shardingProbe.expectMsg(ForwardToProxy(testDesc, InitializeConnection(testDesc, factory)))
       shardingProbe.expectMsg(ForwardToProxy(testDesc, Start))
     }
 
     "forward message to proxy" in {
       val shardingProbe = TestProbe()
-      val sharding = mock[ClusterSharding]
-      when(sharding.shardRegion("Proxy")).thenReturn(shardingProbe.ref)
+      val sharding = mock[RegionAwareClusterSharding]
+      (sharding.findOrStartRegion _).expects(*,*,*,*,*,*).returns(shardingProbe.ref)
 
       val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, mock[ChatConnectionFactory]))
       coordinator ! ForwardToProxy(testDesc, 2)
@@ -75,13 +81,13 @@ class ConnectionProxyRegionCoordinatorSpec extends TestKit(ActorSystem("Connecti
 
     "stop proxy" in {
       val shardingProbe = TestProbe()
-      val sharding = mock[ClusterSharding]
-      when(sharding.shardRegion("Proxy")).thenReturn(shardingProbe.ref)
+      val sharding = mock[RegionAwareClusterSharding]
+      (sharding.findOrStartRegion _).expects(*,*,*,*,*,*).returns(shardingProbe.ref)
 
       val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, mock[ChatConnectionFactory]))
       coordinator ! StartProxy(testDesc)
-      shardingProbe.fishForMessage(max = 1 second) {case msg: ForwardToProxy => true} //Init
-      shardingProbe.fishForMessage(max = 1 second) {case msg: ForwardToProxy => true}//Start
+      shardingProbe.fishForMessage(max = 1 second) { case msg: ForwardToProxy => true } //Init
+      shardingProbe.fishForMessage(max = 1 second) { case msg: ForwardToProxy => true } //Start
       coordinator ! StopProxy(testDesc)
       shardingProbe.expectMsg(ForwardToProxy(testDesc, Stop))
     }

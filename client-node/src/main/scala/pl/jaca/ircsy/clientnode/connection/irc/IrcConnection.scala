@@ -2,7 +2,7 @@ package pl.jaca.ircsy.clientnode.connection.irc
 
 import java.util.Observable
 
-import pl.jaca.ircsy.clientnode.connection.{ChatConnectionDesc, ChatConnection}
+import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ChatConnection}
 import pl.jaca.ircsy.clientnode.connection.ChatConnection.{Notification, ChannelMessage, PrivateMessage}
 import rx.lang.scala
 
@@ -11,7 +11,7 @@ import rx.lang.scala
   *         Created 2016-05-02 at 13
   */
 class IrcConnection extends ChatConnection{
-  override def connectTo(connectionDesc: ChatConnectionDesc): Unit = ???
+  override def connectTo(connectionDesc: ConnectionDesc): Unit = ???
 
   override def disconnect(): Unit = ???
 

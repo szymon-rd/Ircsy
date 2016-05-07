@@ -1,9 +1,9 @@
-package pl.jaca.ircsy.util.akka
+package pl.jaca.ircsy.clientnode.sharding
 
-import akka.actor.{ActorSystem, Props, ActorRef}
-import akka.cluster.sharding.ShardRegion.{ExtractShardId, ExtractEntityId}
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.cluster.sharding.ShardCoordinator.{LeastShardAllocationStrategy, ShardAllocationStrategy}
+import akka.cluster.sharding.ShardRegion.{ExtractEntityId, ExtractShardId}
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
-import akka.cluster.sharding.ShardCoordinator.{ShardAllocationStrategy, LeastShardAllocationStrategy}
 
 import scala.util.Try
 
@@ -11,9 +11,8 @@ import scala.util.Try
   * @author Jaca777
   *         Created 2016-05-05 at 12
   */
-object ShardingUtil {
+class RegionAwareClusterShardingImpl(sharding: ClusterSharding) extends RegionAwareClusterSharding{
   def findOrStartRegion(system: ActorSystem,
-                        sharding: ClusterSharding,
                         typeName: String,
                         entityProps: Props,
                         entityIdExtractor: ExtractEntityId,
@@ -21,7 +20,7 @@ object ShardingUtil {
                         stopMessage: Any
                        ): ActorRef = {
     findRegion(sharding, typeName).recoverWith {
-      case IllegalArgumentException => Try {
+      case _: IllegalArgumentException => Try {
         startRegion(
           system,
           sharding = sharding,

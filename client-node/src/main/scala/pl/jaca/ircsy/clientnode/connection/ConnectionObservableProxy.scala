@@ -3,7 +3,8 @@ package pl.jaca.ircsy.clientnode.connection
 import akka.actor.ActorRef
 import akka.persistence.{Recovery, AtLeastOnceDelivery, PersistentActor, SnapshotOffer}
 import pl.jaca.ircsy.clientnode.connection.ChatConnection.{PrivateMessage, ChannelMessage}
-import pl.jaca.ircsy.clientnode.connection.ChatConnectionObservableProxy._
+import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
+import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol._
 import rx.lang.scala.{Subject, Subscription}
 
 import scala.util.Try
@@ -12,26 +13,24 @@ import scala.util.Try
   * @author Jaca777
   *         Created 2016-05-01 at 17
   */
-class ChatConnectionObservableProxy(connectionDesc: ChatConnectionDesc, connectionFactory: ChatConnectionFactory) extends PersistentActor {
+class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactory: ChatConnectionFactory) extends PersistentActor {
 
 
-  var state: ListenerState = ListenerState(false, connectionDesc, connectionFactory, Set.empty, Set.empty)
+  var state: ProxyState = ProxyState(false, connectionDesc, connectionFactory, Set.empty, Set.empty)
 
   var connection: ChatConnection = connectionFactory.newConnection()
 
-  override def persistenceId: String = "Proxy-" + connectionDesc.toString
+  override def persistenceId: String = "ConnectionProxy-" + connectionDesc.toString
 
   override def receiveRecover: Receive = {
-    case SnapshotOffer(_, offeredState: ListenerState) =>
+    case SnapshotOffer(_, offeredState: ProxyState) =>
       setState(offeredState)
-    case Start => start()
-    case Stop => stop()
     case RegisterObserver(observer) => registerObserver(observer)
     case UnregisterObserver(observer) => unregisterObserver(observer)
     case JoinChannel(channel) => joinChannel(channel)
   }
 
-  private def setState(state: ListenerState) {
+  private def setState(state: ProxyState) {
     if (state.running) connectToServer()
     state.channels.foreach(joinChannel)
     this.state = state
@@ -62,6 +61,7 @@ class ChatConnectionObservableProxy(connectionDesc: ChatConnectionDesc, connecti
       _ => state = state.copy(running = true)
     }
     notifyResult(connectingResult, ConnectedToServer(state.connectionDesc), FailedToConnectToServer(state.connectionDesc))
+    state.channels.foreach(joinChannel)
     startNotifying()
     saveSnapshot(state)
   }
@@ -82,6 +82,8 @@ class ChatConnectionObservableProxy(connectionDesc: ChatConnectionDesc, connecti
 
   private def registerObserver(observer: Observer) {
     state = state.copy(observers = state.observers + observer)
+    if(observer.subjects.exists(_ isInterestedIn state))
+      observer.ref ! state
   }
 
   private def unregisterObserver(observer: Observer) {
@@ -96,6 +98,7 @@ class ChatConnectionObservableProxy(connectionDesc: ChatConnectionDesc, connecti
     result.foreach {
       _ => state = state.copy(channels = state.channels + name)
     }
+    println(result)
     notifyResult(result, JoinedChannel(name), FailedToJoinChannel(name))
   }
 
@@ -132,35 +135,38 @@ class ChatConnectionObservableProxy(connectionDesc: ChatConnectionDesc, connecti
 
   private def notifyObservers(msg: Any) =
     state.observers
-      .filter(_.subjects.contains(msg.getClass))
+      .filter(_.subjects.exists(_ isInterestedIn msg))
       .map(_.ref)
       .foreach(_ ! msg)
 
 }
 
-object ChatConnectionObservableProxy {
+object ConnectionObservableProxy {
 
   abstract class FailureNotification {
-    private[ChatConnectionObservableProxy] var cause: Throwable = null
+    private[ConnectionObservableProxy] var cause: Throwable = null
 
     def getCause = cause
   }
 
-  private[ChatConnectionObservableProxy] case class ListenerState(running: Boolean, connectionDesc: ChatConnectionDesc, connectionFactory: ChatConnectionFactory, channels: Set[String], observers: Set[Observer])
+  case class ProxyState(running: Boolean, connectionDesc: ConnectionDesc, connectionFactory: ChatConnectionFactory, channels: Set[String], observers: Set[Observer]) extends Serializable
 
-  case class ConnectedToServer(connectionDesc: ChatConnectionDesc)
+  case class ChannelSubject(channelName: String) extends ObserverSubject {
+    override def isInterestedIn(notification: Any): Boolean = notification match {
+      case ChannelMessageReceived(`channelName`, _) => true
+      case LeftChannel(`channelName`) => true
+    }
+  }
 
-  case class FailedToConnectToServer(chatConnectionDesc: ChatConnectionDesc) extends FailureNotification
+  val OnRegisterStateSubject = ClassFilterSubject(classOf[ProxyState])
 
   object Start
 
   object Stop
 
-  case class Observer(ref: ActorRef, subjects: Class[_]*)
+  case class ConnectedToServer(connectionDesc: ConnectionDesc)
 
-  case class RegisterObserver(observer: Observer)
-
-  case class UnregisterObserver(observer: Observer)
+  case class FailedToConnectToServer(chatConnectionDesc: ConnectionDesc) extends FailureNotification
 
   case class JoinChannel(name: String)
 
