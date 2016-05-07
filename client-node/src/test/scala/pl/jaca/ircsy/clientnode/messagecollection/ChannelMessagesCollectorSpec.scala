@@ -31,13 +31,19 @@ class ChannelMessagesCollectorSpec extends {
   "ChannelMessagesCollector" should {
     "subscribe to channels topic" in {
       val mediator = TestProbe()
-      val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref)))
+      val repository = mock[MessageRepository]
+      val factory = mock[MessageRepositoryFactory]
+      (factory.newRepository _).expects().returns(repository)
+      val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
       mediator.expectMsg(Subscribe("channels-foo:42", collector))
     }
 
     "schedule messages broadcasting" in {
       val mediator = TestProbe()
-      val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref)))
+      val repository = mock[MessageRepository]
+      val factory = mock[MessageRepositoryFactory]
+      (factory.newRepository _).expects().returns(repository)
+      val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
       mediator.expectMsg(Subscribe("channels-foo:42", collector))
       within(2 seconds) {
         mediator.receiveN(2).foreach {
@@ -46,10 +52,13 @@ class ChannelMessagesCollectorSpec extends {
       }
     }
 
-    "register observer in" in {
+    "register observer" in {
       val mediator = TestProbe()
       val proxy = TestProbe()
-      val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref)))
+      val repository = mock[MessageRepository]
+      val factory = mock[MessageRepositoryFactory]
+      (factory.newRepository _).expects().returns(repository)
+      val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
       mediator.receiveN(2)
       collector ! ChannelConnectionFound(serverDesc, "bar", proxy.ref)
       proxy.expectMsg(RegisterObserver(Observer(collector, Set(ChannelSubject("bar")))))
@@ -59,13 +68,13 @@ class ChannelMessagesCollectorSpec extends {
     "collect messages in" in {
       val mediator = TestProbe()
       val proxy = TestProbe()
-      val factory = mock[MessageRepositoryFactory]
       val repository = mock[MessageRepository]
-      val message = ChannelMessage("bar", "user", LocalDate.now(), "message")
+      val factory = mock[MessageRepositoryFactory]
       (factory.newRepository _).expects().returns(repository)
+      val message = ChannelMessage("bar", "user", LocalDate.now(), "message")
       (repository.addChannelMessage _).expects(serverDesc, message)
 
-      val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref)))
+      val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
       mediator.receiveN(2)
       collector ! ChannelConnectionFound(serverDesc, "bar", proxy.ref)
       proxy.receiveN(1)
@@ -80,14 +89,13 @@ class ChannelMessagesCollectorSpec extends {
       val repository = mock[MessageRepository]
       val message = ChannelMessage("bar", "user", LocalDate.now(), "message")
       (factory.newRepository _).expects().returns(repository)
-      (repository.addChannelMessage _).expects(serverDesc, message)
 
-      val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref)))
+      val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
       mediator.receiveN(2)
       collector ! ChannelConnectionFound(serverDesc, "bar", proxy.ref)
       proxy.receiveN(1)
       proxy.send(collector, LeftChannel("bar"))
-      mediator.expectMsg(Subscribe("channels-foo:42", collector))
+      mediator.expectMsg(Publish("channels-foo:42", FindChannelConnection(serverDesc, "bar")))
     }
   }
 }
