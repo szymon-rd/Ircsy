@@ -31,7 +31,7 @@ class ConnectionProxySupervisor extends Actor {
 
   def supervising(proxy: ActorRef): Receive = {
     case msg => proxy ! msg
-    case Terminated(_) => //TODO what?
+    case Terminated(_) => context.stop(self)
   }
 
   implicit val timeout = Timeout(2 seconds)

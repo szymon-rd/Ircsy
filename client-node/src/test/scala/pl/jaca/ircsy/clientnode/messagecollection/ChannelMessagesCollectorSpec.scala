@@ -2,19 +2,20 @@ package pl.jaca.ircsy.clientnode.messagecollection
 
 import java.time.LocalDate
 
-import akka.actor.{Props, ActorSystem}
+import akka.actor.{Terminated, Props, ActorSystem}
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 
-import akka.testkit.{TestProbe, TestKitBase, TestKit}
+import akka.testkit.{TestActorRef, TestProbe, TestKitBase, TestKit}
 import org.scalamock.matchers.MockParameter
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec, WordSpecLike}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{LeftChannel, ChannelMessageReceived, ChannelSubject}
 import pl.jaca.ircsy.clientnode.connection.ServerDesc
 import pl.jaca.ircsy.clientnode.connection.messages.ChannelMessage
+import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollector.Stop
 import pl.jaca.ircsy.clientnode.messagecollection.ConnectionActivityObserver.{ChannelConnectionFound, FindChannelConnection, FindUserConnection}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.{MessageRepositoryFactory, MessageRepository}
-import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{ClassFilterSubject, Observer, RegisterObserver}
+import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{UnregisterObserver, ClassFilterSubject, Observer, RegisterObserver}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -59,7 +60,7 @@ class ChannelMessagesCollectorSpec extends {
       val factory = mock[MessageRepositoryFactory]
       (factory.newRepository _).expects().returns(repository)
       val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
-      mediator.receiveN(2)
+      mediator.receiveN(2) // Subscribe, publish
       collector ! ChannelConnectionFound(serverDesc, "bar", proxy.ref)
       proxy.expectMsg(RegisterObserver(Observer(collector, Set(ChannelSubject("bar")))))
     }
@@ -75,9 +76,9 @@ class ChannelMessagesCollectorSpec extends {
       (repository.addChannelMessage _).expects(serverDesc, message)
 
       val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
-      mediator.receiveN(2)
+      mediator.receiveN(2) // Subscribe, publish
       collector ! ChannelConnectionFound(serverDesc, "bar", proxy.ref)
-      proxy.receiveN(1)
+      proxy.receiveN(1) // Register observer
       proxy.send(collector, ChannelMessageReceived(message))
       Thread.sleep(200)
     }
@@ -87,15 +88,31 @@ class ChannelMessagesCollectorSpec extends {
       val proxy = TestProbe()
       val factory = mock[MessageRepositoryFactory]
       val repository = mock[MessageRepository]
-      val message = ChannelMessage("bar", "user", LocalDate.now(), "message")
       (factory.newRepository _).expects().returns(repository)
 
       val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
-      mediator.receiveN(2)
+      mediator.receiveN(2) // Subscribe, publish
       collector ! ChannelConnectionFound(serverDesc, "bar", proxy.ref)
-      proxy.receiveN(1)
+      proxy.receiveN(1) // Register observer
       proxy.send(collector, LeftChannel("bar"))
       mediator.expectMsg(Publish("channels-foo:42", FindChannelConnection(serverDesc, "bar")))
+    }
+
+    "unsubscribe and stop" in {
+      val mediator = TestProbe()
+      val proxy = TestProbe()
+      val factory = mock[MessageRepositoryFactory]
+      val repository = mock[MessageRepository]
+      (factory.newRepository _).expects().returns(repository);
+      val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
+      mediator.receiveN(2) // Subscribe, publish
+      collector ! ChannelConnectionFound(serverDesc, "bar", proxy.ref)
+      proxy.receiveN(1) // Register observer
+
+      collector ! Stop
+      watch(collector)
+      proxy.expectMsg(UnregisterObserver(Observer(collector, Set(ChannelSubject("bar")))))
+      expectTerminated(collector)
     }
   }
 }

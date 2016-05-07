@@ -15,7 +15,7 @@ import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterSharding
   * @author Jaca777
   *         Created 2016-05-02 at 12
   */
-class MessageCollectionRegionCoordinatorSpec extends {
+class MessageCollectionRegionCoordinatorSpec extends { //TODO
   implicit val system = ActorSystem("ConnectionProxyRegionCoordinatorSpec")
 } with WordSpec with TestKitBase with Matchers with MockFactory {
 
