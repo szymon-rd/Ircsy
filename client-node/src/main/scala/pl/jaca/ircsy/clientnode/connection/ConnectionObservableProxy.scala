@@ -62,7 +62,7 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
     }
     notifyResult(connectingResult, ConnectedToServer(state.connectionDesc), FailedToConnectToServer(state.connectionDesc))
     state.channels.foreach(joinChannel)
-    startNotifying()
+    startNotifyingMessages()
     saveSnapshot(state)
   }
 
@@ -71,12 +71,16 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
   }
 
   private def stop() {
-    disconnectFromServer()
-    state = state.copy(running = false, observers = Set.empty)
-    saveSnapshot(state)
+    val disconnectingResult = disconnectFromServer()
+    disconnectingResult foreach {
+      _ =>
+        state = state.copy(running = false, observers = Set.empty)
+        saveSnapshot(state)
+    }
+    notifyResult(disconnectingResult, DisconnectedFromServer(connectionDesc), FailedToDisconnectFromServer(connectionDesc))
   }
 
-  private def disconnectFromServer() {
+  private def disconnectFromServer(): Try[Unit] = Try {
     connection.disconnect()
   }
 
@@ -114,7 +118,7 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
     notifyResult(result, LeftChannel(name), FailedToLeaveChannel(name))
   }
 
-  private def startNotifying() = {
+  private def startNotifyingMessages() = {
     val channelMessageNotifications = connection
       .channelMessages
       .map(ChannelMessageReceived)
@@ -169,6 +173,10 @@ object ConnectionObservableProxy {
   case class ConnectedToServer(connectionDesc: ConnectionDesc)
 
   case class FailedToConnectToServer(chatConnectionDesc: ConnectionDesc) extends FailureNotification
+
+  case class DisconnectedFromServer(connectionDesc: ConnectionDesc)
+
+  case class FailedToDisconnectFromServer(connectionDesc: ConnectionDesc) extends FailureNotification
 
   case class JoinChannel(name: String)
 

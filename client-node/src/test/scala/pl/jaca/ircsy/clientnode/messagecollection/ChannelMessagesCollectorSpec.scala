@@ -103,7 +103,7 @@ class ChannelMessagesCollectorSpec extends {
       val proxy = TestProbe()
       val factory = mock[MessageRepositoryFactory]
       val repository = mock[MessageRepository]
-      (factory.newRepository _).expects().returns(repository);
+      (factory.newRepository _).expects().returns(repository)
       val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
       mediator.receiveN(2) // Subscribe, publish
       collector ! ChannelConnectionFound(serverDesc, "bar", proxy.ref)
