@@ -55,9 +55,9 @@ class ConnectionChannelActivityObserverSpec extends {
       val activityObserver = system.actorOf(Props(new ConnectionActivityObserver(observableProxy.ref, mediator.ref)))
       observableProxy.receiveOne(300 millis)
       observableProxy.reply(testState)
-      activityObserver ! FindUserConnection(serverDesc, "bar")
+      activityObserver ! FindUserConnection(testDesc)
       mediator.receiveOne(300 millis)
-      mediator.expectMsg(Publish("users-foo:42", UserConnectionFound(serverDesc, "bar", observableProxy.ref)))
+      mediator.expectMsg(Publish("users-foo:42", UserConnectionFound(testDesc, observableProxy.ref)))
     }
 
     "not reply to broadcasted user connection request if available" in {
@@ -66,7 +66,7 @@ class ConnectionChannelActivityObserverSpec extends {
       val activityObserver = system.actorOf(Props(new ConnectionActivityObserver(observableProxy.ref, mediator.ref)))
       observableProxy.receiveOne(300 millis)
       observableProxy.reply(testState)
-      activityObserver ! FindUserConnection(serverDesc, "miska")
+      activityObserver ! FindUserConnection(testDesc.copy(username = "miras"))
       mediator.receiveOne(300 millis)
       mediator.expectNoMsg()
     }

@@ -31,9 +31,9 @@ class ConnectionActivityObserver(proxy: ActorRef, pubSubMediator: ActorRef) exte
       if (desc == connection.serverDesc && (channels contains channel))
         pubSubMediator ! Publish(s"channels-$desc", ChannelConnectionFound(desc, channel, proxy))
 
-    case FindUserConnection(desc, name) =>
-      if(desc == connection.serverDesc && name == connection.username)
-        pubSubMediator ! Publish(s"users-$desc", UserConnectionFound(desc, name, proxy) )
+    case FindUserConnection(desc) =>
+      if(desc == connection)
+        pubSubMediator ! Publish(s"users-${desc.serverDesc}", UserConnectionFound(desc, proxy) )
   }
 }
 
@@ -43,7 +43,7 @@ object ConnectionActivityObserver {
 
   case class ChannelConnectionFound(serverDesc: ServerDesc, channelName: String, proxy: ActorRef)
 
-  case class FindUserConnection(serverDesc: ServerDesc, userName: String)
+  case class FindUserConnection(connectionDesc: ConnectionDesc)
 
-  case class UserConnectionFound(serverDesc: ServerDesc, userName: String, proxy: ActorRef)
+  case class UserConnectionFound(connectionDesc: ConnectionDesc, proxy: ActorRef)
 }

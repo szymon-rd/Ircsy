@@ -12,7 +12,7 @@ import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.clientnode.connection.messages.{PrivateMessage, ChannelMessage}
 import pl.jaca.ircsy.clientnode.messagecollection.ConnectionActivityObserver.{UserConnectionFound, FindUserConnection, ChannelConnectionFound, FindChannelConnection}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.{MessageRepositoryFactory, MessageRepository}
-import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{Observer, RegisterObserver}
+import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{ClassFilterSubject, Observer, RegisterObserver}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -47,7 +47,7 @@ class PrivateMessageCollectorSpec extends {
       mediator.receiveN(1)
       within(2 seconds) {
         mediator.receiveN(2).foreach {
-          msg => msg should be(Publish("users-foo:42", FindUserConnection(serverDesc, "user")))
+          msg => msg should be(Publish("users-foo:42", FindUserConnection(connectionDesc)))
         }
       }
     }
@@ -60,8 +60,8 @@ class PrivateMessageCollectorSpec extends {
       (factory.newRepository _).expects().returns(repository)
       val collector = system.actorOf(Props(new PrivateMessageCollector(connectionDesc, mediator.ref, factory)))
       mediator.receiveN(2)
-      collector ! UserConnectionFound(serverDesc, "user", proxy.ref)
-      proxy.expectMsg(RegisterObserver(Observer(collector, Set(ChannelSubject("bar")))))
+      collector ! UserConnectionFound(connectionDesc, proxy.ref)
+      proxy.expectMsg(RegisterObserver(Observer(collector, Set(ClassFilterSubject(classOf[PrivateMessageReceived], classOf[DisconnectedFromServer])))))
     }
 
 
@@ -72,11 +72,11 @@ class PrivateMessageCollectorSpec extends {
       val factory = mock[MessageRepositoryFactory]
       (factory.newRepository _).expects().returns(repository)
       val message = PrivateMessage("user", "user2", "user", LocalDate.now(), "message")
-      (repository.addPrivateMessage _).expects(serverDesc, message)
+      (repository.addPrivateMessage _).expects(connectionDesc, message)
 
       val collector = system.actorOf(Props(new PrivateMessageCollector(connectionDesc, mediator.ref, factory)))
       mediator.receiveN(2)
-      collector ! UserConnectionFound(serverDesc, "user", proxy.ref)
+      collector ! UserConnectionFound(connectionDesc, proxy.ref)
       proxy.receiveN(1)
       proxy.send(collector, PrivateMessageReceived(message))
       Thread.sleep(200)
@@ -91,10 +91,10 @@ class PrivateMessageCollectorSpec extends {
 
       val collector = system.actorOf(Props(new PrivateMessageCollector(connectionDesc, mediator.ref, factory)))
       mediator.receiveN(2)
-      collector ! UserConnectionFound(serverDesc, "user", proxy.ref)
+      collector ! UserConnectionFound(connectionDesc, proxy.ref)
       proxy.receiveN(1)
       proxy.send(collector, DisconnectedFromServer(connectionDesc))
-      mediator.expectMsg(Publish("users-foo:42", FindUserConnection(serverDesc, "user")))
+      mediator.expectMsg(Publish("users-foo:42", FindUserConnection(connectionDesc)))
     }
   }
 }
