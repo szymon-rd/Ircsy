@@ -9,5 +9,6 @@ import pl.jaca.ircsy.clientnode.connection.messages.{PrivateMessage, ChannelMess
   */
 trait MessageRepository {
   def addChannelMessage(server: ServerDesc, message: ChannelMessage)
-  def addPrivateMessage(connection: ConnectionDesc, message: PrivateMessage)
+  def addPrivateMessage(server: ServerDesc, message: PrivateMessage)
+  def close()
 }
