@@ -2,7 +2,7 @@ package pl.jaca.ircsy.clientnode.connection
 
 import java.security.MessageDigest
 
-import akka.actor.{Actor, Props, ActorRef}
+import akka.actor.{PoisonPill, Actor, Props, ActorRef}
 import akka.cluster.sharding.ShardCoordinator.LeastShardAllocationStrategy
 import akka.cluster.sharding.ShardRegion.{EntityId, ShardId}
 import akka.cluster.sharding.{ShardCoordinator, ShardRegion, ClusterSharding, ClusterShardingSettings}
@@ -54,6 +54,9 @@ class ConnectionProxyRegionCoordinator(sharding: RegionAwareClusterSharding, con
       listenerRegion ! ForwardToProxy(desc, Stop)
     case msg: ForwardToProxy =>
       listenerRegion ! msg
+    case Stop =>
+      listenerRegion ! ShardRegion.GracefulShutdown
+      context.stop(self)
   }
 }
 
@@ -65,5 +68,7 @@ object ConnectionProxyRegionCoordinator {
   case class StopProxy(desc: ConnectionDesc)
 
   case class ForwardToProxy(desc: ConnectionDesc, msg: Any)
+
+  object Stop
 
 }

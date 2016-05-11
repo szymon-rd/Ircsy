@@ -72,7 +72,7 @@ class PrivateMessageCollectorSpec extends {
       val factory = mock[MessageRepositoryFactory]
       (factory.newRepository _).expects().returns(repository)
       val message = PrivateMessage("user", "user2", "user", LocalDate.now(), "message")
-      (repository.addPrivateMessage _).expects(connectionDesc, message)
+      (repository.addPrivateMessage _).expects(serverDesc, message)
 
       val collector = system.actorOf(Props(new PrivateMessageCollector(connectionDesc, mediator.ref, factory)))
       mediator.receiveN(2)

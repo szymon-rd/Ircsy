@@ -44,7 +44,7 @@ class PrivateMessageCollector(connectionDesc: ConnectionDesc, pubSubMediator: Ac
 
   def collecting(proxy: ActorRef): Receive = {
     case PrivateMessageReceived(message) =>
-      repository.addPrivateMessage(connectionDesc, message)
+      repository.addPrivateMessage(connectionDesc.serverDesc, message)
     case DisconnectedFromServer(`connectionDesc`) =>
       context become lookingForProxy()
     case Stop =>

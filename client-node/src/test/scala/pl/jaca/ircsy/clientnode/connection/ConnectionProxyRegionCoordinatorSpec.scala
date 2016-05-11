@@ -6,7 +6,7 @@ import akka.actor.ActorSystem.Settings
 import akka.actor._
 import akka.cluster.sharding.ShardCoordinator.ShardAllocationStrategy
 import akka.cluster.sharding.ShardRegion.{MessageExtractor, ExtractShardId, ExtractEntityId}
-import akka.cluster.sharding.{ClusterShardingSettings, ClusterSharding}
+import akka.cluster.sharding.{ShardRegion, ClusterShardingSettings, ClusterSharding}
 import akka.dispatch.{Dispatchers, Mailboxes}
 import akka.event.{LoggingFilter, LoggingAdapter, EventStream}
 import akka.testkit._
@@ -90,6 +90,16 @@ class ConnectionProxyRegionCoordinatorSpec extends {
       shardingProbe.fishForMessage(max = 1 second) { case msg: ForwardToProxy => true } //Start
       coordinator ! StopProxy(testDesc)
       shardingProbe.expectMsg(ForwardToProxy(testDesc, Stop))
+    }
+
+    "stop shard" in {
+      val shardingProbe = TestProbe()
+      val sharding = mock[RegionAwareClusterSharding]
+      (sharding.findOrStartRegion _).expects(*,*,*,*,*,*).returns(shardingProbe.ref)
+
+      val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, mock[ChatConnectionFactory]))
+      coordinator ! Stop
+      shardingProbe.expectMsg(ShardRegion.GracefulShutdown)
     }
   }
 
