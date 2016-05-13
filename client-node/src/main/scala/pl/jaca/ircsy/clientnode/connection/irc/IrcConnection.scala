@@ -1,31 +1,57 @@
 package pl.jaca.ircsy.clientnode.connection.irc
 
-import java.util.Observable
 
-import pl.jaca.ircsy.clientnode.connection.messages.{Notification, PrivateMessage, ChannelMessage}
-import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ChatConnection}
-import rx.lang.scala
+import com.ircclouds.irc.api
+import com.ircclouds.irc.api.IRCApiImpl
+import com.ircclouds.irc.api.domain.IRCChannel
+import com.ircclouds.irc.api.state.IIRCState
+import pl.jaca.ircsy.chat.messages.{ChannelMessage, Notification, PrivateMessage}
+import pl.jaca.ircsy.clientnode.connection.{ChatConnection, ConnectionDesc}
+import rx.lang.scala.{Subject, Observable}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.Try
+
 
 /**
   * @author Jaca777
   *         Created 2016-05-02 at 13
+  *         Non blocking.
   */
-class IrcConnection extends ChatConnection{
-  override def connectTo(connectionDesc: ConnectionDesc): Unit = ???
+class IrcConnection(executionContext: ExecutionContext) extends ChatConnection {
 
-  override def disconnect(): Unit = ???
+  implicit val ec = executionContext
 
-  override def sendPrivateMessage(user: String, msg: String): Unit = ???
+  override val privateMessages = Subject[PrivateMessage]()
+  override val notifications = Subject[Notification]()
+  override val channelMessages = Subject[ChannelMessage]()
+  val notificationListener = new NotificationListener(notifications)
+  val irc = new IRCApiImpl(true)
 
-  override def channelMessages: scala.Observable[ChannelMessage] = ???
+  override def connectTo(connectionDesc: ConnectionDesc, timeout: Duration): Future[Unit] =
+    toFuture((irc.connect _).curried(new IrcServerParameterAdapter(connectionDesc)))
 
-  override def joinChannel(name: String): Unit = ???
 
-  override def privateMessages: scala.Observable[PrivateMessage] = ???
+  override def disconnect() {
+    irc.disconnect()
+  }
 
-  override def notifications: scala.Observable[Notification] = ???
+  override def sendPrivateMessage(user: String, msg: String): Future[Unit] =
+    toFuture((irc.message(_: String, _: String, _: api.Callback[String])).curried(user)(msg))
 
-  override def sendChannelMessage(channel: String, msg: String): Unit = ???
+  override def joinChannel(name: String): Future[Unit] =
+    toFuture((irc.joinChannel (_: String, _: api.Callback[IRCChannel])).curried(name))
 
-  override def leaveChannel(name: String): Unit = ???
+
+  override def sendChannelMessage(channel: String, msg: String): Future[Unit] =
+    toFuture((irc.message (_: String, _: String, _: api.Callback[String])).curried(channel)(msg))
+
+  override def leaveChannel(name: String): Future[Unit] =
+    toFuture((irc.leaveChannel (_: String, _: api.Callback[String])).curried(name))
+
+  private def toFuture[T](fun: (api.Callback[T]) => Unit): Future[Unit] = {
+    val callback = new IrcCallback[T]
+    fun(callback)
+    callback.future.map(_ => ())
+  }
 }

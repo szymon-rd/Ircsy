@@ -1,7 +1,7 @@
 package pl.jaca.ircsy.clientnode.messagecollection.repository
 
+import pl.jaca.ircsy.chat.messages.{PrivateMessage, ChannelMessage}
 import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ServerDesc}
-import pl.jaca.ircsy.clientnode.connection.messages.{PrivateMessage, ChannelMessage}
 
 import scala.util.Try
 

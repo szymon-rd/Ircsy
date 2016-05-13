@@ -7,9 +7,10 @@ import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 import akka.testkit.{TestProbe, TestKitBase}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
+import pl.jaca.ircsy.chat.PrivateChat
+import pl.jaca.ircsy.chat.messages.{ChatUser, PrivateMessage}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
 import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ServerDesc}
-import pl.jaca.ircsy.clientnode.connection.messages.{PrivateMessage, ChannelMessage}
 import pl.jaca.ircsy.clientnode.messagecollection.ConnectionActivityObserver.{UserConnectionFound, FindUserConnection, ChannelConnectionFound, FindChannelConnection}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.{MessageRepositoryFactory, MessageRepository}
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{ClassFilterSubject, Observer, RegisterObserver}
@@ -71,7 +72,11 @@ class PrivateMessageCollectorSpec extends {
       val repository = mock[MessageRepository]
       val factory = mock[MessageRepositoryFactory]
       (factory.newRepository _).expects().returns(repository)
-      val message = PrivateMessage("user", "user2", "user", LocalDate.now(), "message")
+
+      val user1 = new ChatUser("foo1", "bar1", "foo1")
+      val user2 = new ChatUser("foo", "foor", "baarr")
+      val privateChat = new PrivateChat(user1, user2)
+      val message = new PrivateMessage(privateChat, LocalDate.now(), user2, "message")
       (repository.addPrivateMessage _).expects(serverDesc, message)
 
       val collector = system.actorOf(Props(new PrivateMessageCollector(connectionDesc, mediator.ref, factory)))

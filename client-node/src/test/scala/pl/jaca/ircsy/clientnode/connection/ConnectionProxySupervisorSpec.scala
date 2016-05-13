@@ -23,8 +23,8 @@ class ConnectionProxySupervisorSpec extends {
     "start a proxy" in {
       val factory = mock[ChatConnectionFactory]
       val connection = mock[ChatConnection]
-      (factory.newConnection _).expects().returns(connection)
-      (connection.connectTo _).expects(testDesc)
+      (factory.newConnection _).expects(*).returns(connection)
+      (connection.connectTo _).expects(testDesc, *)
       (connection.channelMessages _).expects().returns(Observable.empty)
       (connection.privateMessages _).expects().returns(Observable.empty)
       val proxy = system.actorOf(Props(new ConnectionProxySupervisor()))

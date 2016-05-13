@@ -9,9 +9,9 @@ import akka.testkit.{TestActorRef, TestProbe, TestKitBase, TestKit}
 import org.scalamock.matchers.MockParameter
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec, WordSpecLike}
+import pl.jaca.ircsy.chat.messages.{ChatUser, ChannelMessage}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{LeftChannel, ChannelMessageReceived, ChannelSubject}
 import pl.jaca.ircsy.clientnode.connection.ServerDesc
-import pl.jaca.ircsy.clientnode.connection.messages.ChannelMessage
 import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollector.Stop
 import pl.jaca.ircsy.clientnode.messagecollection.ConnectionActivityObserver.{ChannelConnectionFound, FindChannelConnection, FindUserConnection}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.{MessageRepositoryFactory, MessageRepository}
@@ -28,6 +28,7 @@ class ChannelMessagesCollectorSpec extends {
 } with WordSpec with TestKitBase with Matchers with MockFactory {
 
   val serverDesc = ServerDesc("foo", 42)
+  val testUser = new ChatUser("foo", "bar", "foo")
 
   "ChannelMessagesCollector" should {
     "subscribe to channels topic" in {
@@ -72,7 +73,7 @@ class ChannelMessagesCollectorSpec extends {
       val repository = mock[MessageRepository]
       val factory = mock[MessageRepositoryFactory]
       (factory.newRepository _).expects().returns(repository)
-      val message = ChannelMessage("bar", "user", LocalDate.now(), "message")
+      val message = new ChannelMessage("bar", LocalDate.now(), testUser, "message")
       (repository.addChannelMessage _).expects(serverDesc, message)
 
       val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))

@@ -8,6 +8,7 @@ import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{ClassFilterSubject, Observer, RegisterObserver}
 import rx.lang.scala.Observable
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -29,7 +30,7 @@ class ConnectionObservableProxySpec extends {
     "join channel" in {
       val factory = mock[ChatConnectionFactory]
       val connection = mock[ChatConnection]
-      (factory.newConnection _).expects().returns(connection)
+      (factory.newConnection _).expects(*).returns(connection)
       (connection.joinChannel _).expects("channel")
       (connection.channelMessages _).expects().returns(Observable.empty)
       (connection.privateMessages _).expects().returns(Observable.empty)
@@ -43,10 +44,10 @@ class ConnectionObservableProxySpec extends {
     "notify observers when child joined channel" in {
       val factory = mock[ChatConnectionFactory]
       val connection = mock[ChatConnection]
-      (factory.newConnection _).expects().returns(connection)
+      (factory.newConnection _).expects(*).returns(connection)
       (connection.channelMessages _).expects().returns(Observable.empty)
       (connection.privateMessages _).expects().returns(Observable.empty)
-      (connection.connectTo _).expects(*)
+      (connection.connectTo _).expects(*, *)
       (connection.joinChannel _).expects(*)
       val proxy = system.actorOf(Props(new ConnectionObservableProxy(testDesc, factory)))
       proxy ! RegisterObserver(Observer(testActor, Set(ClassFilterSubject(classOf[JoinedChannel], classOf[FailedToJoinChannel]))))
@@ -58,8 +59,8 @@ class ConnectionObservableProxySpec extends {
     "notify observers when failed to join channel" in {
       val factory = mock[ChatConnectionFactory]
       val connection = mock[ChatConnection]
-      (factory.newConnection _).expects().returns(connection)
-      (connection.connectTo _).expects(*)
+      (factory.newConnection _).expects(*).returns(connection)
+      (connection.connectTo _).expects(*, *)
       (connection.channelMessages _).expects().returns(Observable.empty)
       (connection.privateMessages _).expects().returns(Observable.empty)
       (connection.joinChannel _).expects(*).throws(new RuntimeException())

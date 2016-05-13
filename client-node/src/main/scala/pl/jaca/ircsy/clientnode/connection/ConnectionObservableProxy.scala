@@ -2,10 +2,12 @@ package pl.jaca.ircsy.clientnode.connection
 
 import akka.actor.ActorRef
 import akka.persistence.{Recovery, AtLeastOnceDelivery, PersistentActor, SnapshotOffer}
+import pl.jaca.ircsy.chat.messages.{ChannelMessage, PrivateMessage}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
-import pl.jaca.ircsy.clientnode.connection.messages.{ChannelMessage, PrivateMessage}
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol._
 import rx.lang.scala.{Observable, Subject, Subscription}
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 import scala.util.Try
 
@@ -15,10 +17,11 @@ import scala.util.Try
   */
 class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactory: ChatConnectionFactory) extends PersistentActor {
 
+  implicit val executionContext = context.dispatcher
 
   var state: ProxyState = ProxyState(false, connectionDesc, connectionFactory, Set.empty, Set.empty)
 
-  var connection: ChatConnection = connectionFactory.newConnection()
+  var connection: ChatConnection = connectionFactory.newConnection(executionContext)
 
   override def persistenceId: String = "ConnectionProxy-" + connectionDesc.toString
 
@@ -67,7 +70,7 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
   }
 
   private def connectToServer(): Try[Unit] = Try {
-    connection.connectTo(state.connectionDesc)
+    connection.connectTo(state.connectionDesc, 3 seconds)
   }
 
   private def stop() {
@@ -159,7 +162,7 @@ object ConnectionObservableProxy {
 
   case class ChannelSubject(channelName: String) extends ObserverSubject {
     override def isInterestedIn(notification: Any): Boolean = notification match {
-      case ChannelMessageReceived(ChannelMessage(`channelName`, _, _, _)) => true
+      case ChannelMessageReceived(msg: ChannelMessage) if msg.getChannel == channelName => true
       case LeftChannel(`channelName`) => true
     }
   }
