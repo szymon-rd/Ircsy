@@ -1,10 +1,12 @@
 package pl.jaca.ircsy.chat.messages;
 
+import java.io.Serializable;
+
 /**
  * @author Jaca777
  *         Created 2016-05-13 at 23
  */
-public class ChatUser {
+public class ChatUser implements Serializable{
     private String nick;
     private String hostname;
     private String ident;
