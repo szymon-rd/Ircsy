@@ -29,7 +29,6 @@ class NotificationListener(notifications: Subject[Notification]) extends Various
   override def onUserQuit(msg: QuitMessage): Unit =
     notifications.onNext(new UserQuitNotification(LocalDate.now(), new ChatUserAdapter(msg.getSource), msg.getQuitMsg))
 
-
   override def onChannelKick(msg: ChannelKick): Unit =
     notifications.onNext(new UserKickNotification(LocalDate.now(), msg.getChannelName, new ChatUserAdapter(msg.getSource), msg.getKickedNickname, msg.getText))
 
