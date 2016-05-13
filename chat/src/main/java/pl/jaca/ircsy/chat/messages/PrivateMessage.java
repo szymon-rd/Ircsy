@@ -14,13 +14,13 @@ public class PrivateMessage implements Serializable {
     private PrivateChat chat;
     private LocalDate time;
     private ChatUser author;
-    private String message;
+    private String text;
 
-    public PrivateMessage(PrivateChat chat, LocalDate time, ChatUser author, String message) {
+    public PrivateMessage(PrivateChat chat, LocalDate time, ChatUser author, String text) {
         this.chat = chat;
         this.time = time;
         this.author = author;
-        this.message = message;
+        this.text = text;
     }
 
     public PrivateChat getChat() {
@@ -35,7 +35,7 @@ public class PrivateMessage implements Serializable {
         return author;
     }
 
-    public String getMessage() {
-        return message;
+    public String getText() {
+        return text;
     }
 }
