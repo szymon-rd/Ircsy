@@ -1,6 +1,6 @@
 rootProject.name = 'ircsy'
 include 'client-node'
-include 'server'
+include 'service'
 include 'web-app'
 include 'common'
-include 'common-test'
+include 'chat'
