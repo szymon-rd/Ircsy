@@ -4,19 +4,29 @@ import pl.jaca.ircsy.chat.ChannelTopic;
 import pl.jaca.ircsy.chat.messages.ChannelNotification;
 import pl.jaca.ircsy.chat.messages.ChatUser;
 
+import java.time.LocalDate;
+
 /**
  * @author Jaca777
  *         Created 2016-05-13 at 22
  */
 public class TopicChangeNotification implements ChannelNotification {
+
+    private LocalDate time;
     private String channel;
     private ChatUser user;
     private ChannelTopic newTopic;
 
-    public TopicChangeNotification(String channel, ChatUser user, ChannelTopic newTopic) {
+    public TopicChangeNotification(LocalDate time, String channel, ChatUser user, ChannelTopic newTopic) {
+        this.time = time;
         this.channel = channel;
         this.user = user;
         this.newTopic = newTopic;
+    }
+
+    @Override
+    public LocalDate getTime() {
+        return time;
     }
 
     @Override
