@@ -22,11 +22,16 @@ class IrcConnection(executionContext: ExecutionContext) extends ChatConnection {
 
   implicit val ec = executionContext
 
-  override val privateMessages = Subject[PrivateMessage]()
   override val notifications = Subject[Notification]()
+  override val privateMessages = Subject[PrivateMessage]()
   override val channelMessages = Subject[ChannelMessage]()
   val notificationListener = new NotificationListener(notifications)
+  val privateMessageListener = new PrivateMessageListener(privateMessages)
+  val channelMessageListener = new ChannelMessageListener(channelMessages)
   val irc = new IRCApiImpl(true)
+  irc.addListener(notificationListener)
+  irc.addListener(privateMessageListener)
+  irc.addListener(channelMessageListener)
 
   override def connectTo(connectionDesc: ConnectionDesc, timeout: Duration): Future[Unit] =
     toFuture((irc.connect _).curried(new IrcServerParameterAdapter(connectionDesc)))
