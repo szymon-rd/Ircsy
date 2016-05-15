@@ -2,7 +2,7 @@ package pl.jaca.ircsy.clientnode.connection
 
 import java.security.MessageDigest
 
-import akka.actor.{PoisonPill, Actor, Props, ActorRef}
+import akka.actor._
 import akka.cluster.sharding.ShardCoordinator.LeastShardAllocationStrategy
 import akka.cluster.sharding.ShardRegion.{EntityId, ShardId}
 import akka.cluster.sharding.{ShardCoordinator, ShardRegion, ClusterSharding, ClusterShardingSettings}
@@ -16,7 +16,9 @@ import pl.jaca.ircsy.clientnode.sharding.{RegionAwareClusterSharding, RegionAwar
   * @author Jaca777
   *         Created 2016-05-01 at 23
   */
-class ConnectionProxyRegionCoordinator(sharding: RegionAwareClusterSharding, connectionFactory: ChatConnectionFactory) extends Actor {
+class ConnectionProxyRegionCoordinator(sharding: RegionAwareClusterSharding, connectionFactory: ChatConnectionFactory) extends Actor with ActorLogging {
+
+  log.info("Starting connection proxy region coordinator...")
 
   val extractEntityId: ShardRegion.ExtractEntityId = {
     case ForwardToProxy(desc, msg) =>
@@ -47,13 +49,16 @@ class ConnectionProxyRegionCoordinator(sharding: RegionAwareClusterSharding, con
 
   override def receive: Receive = {
     case StartProxy(desc) =>
+      log.debug(s"Starting connection proxy: $desc...")
       listenerRegion ! ForwardToProxy(desc, Initialize(desc,connectionFactory))
       listenerRegion ! ForwardToProxy(desc, Start)
     case StopProxy(desc) =>
+      log.debug(s"Stopping connection proxy: $desc...")
       listenerRegion ! ForwardToProxy(desc, Stop)
     case msg: ForwardToProxy =>
       listenerRegion ! msg
     case Stop =>
+      log.info("Stopping connection proxy region coordinator...")
       listenerRegion ! ShardRegion.GracefulShutdown
       context.stop(self)
   }

@@ -1,6 +1,6 @@
 package pl.jaca.ircsy.clientnode.connection
 
-import akka.actor.ActorRef
+import akka.actor.{ActorLogging, ActorRef}
 import akka.persistence.{Recovery, AtLeastOnceDelivery, PersistentActor, SnapshotOffer}
 import pl.jaca.ircsy.chat.messages.{ChannelMessage, PrivateMessage}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
@@ -15,7 +15,7 @@ import scala.util.Try
   * @author Jaca777
   *         Created 2016-05-01 at 17
   */
-class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactory: ChatConnectionFactory) extends PersistentActor {
+class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactory: ChatConnectionFactory) extends PersistentActor with ActorLogging {
 
   implicit val executionContext = context.dispatcher
 
@@ -60,9 +60,12 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
   }
 
   private def start() {
+    log.debug(s"Starting connection observable proxy ($connectionDesc)...")
     val connectingResult = connectToServer()
     connectingResult.foreach {
-      _ => state = state.copy(running = true)
+      _ =>
+        state = state.copy(running = true)
+        log.debug(s"Connected to server: ${connectionDesc.serverDesc}")
     }
     notifyResult(connectingResult, ConnectedToServer(state.connectionDesc), FailedToConnectToServer(state.connectionDesc))
     state.channels.foreach(joinChannel)
@@ -75,6 +78,7 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
   }
 
   private def stop() {
+    log.debug(s"Stopping connection observable proxy ($connectionDesc)...")
     val result = disconnectFromServer()
     notifyResult(result, DisconnectedFromServer(connectionDesc), FailedToDisconnectFromServer(connectionDesc))
     state = state.copy(running = false, observers = Set.empty)
@@ -87,12 +91,14 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
   }
 
   private def registerObserver(observer: Observer) {
+    log.debug(s"Registering observer $observer for ($connectionDesc)...")
     state = state.copy(observers = state.observers + observer)
     if (observer.subjects.exists(_ isInterestedIn state))
       observer.ref ! state
   }
 
   private def unregisterObserver(observer: Observer) {
+    log.debug(s"Unregistering observer $observer for ($connectionDesc)...")
     state = state.copy(observers = state.observers - observer)
   }
 

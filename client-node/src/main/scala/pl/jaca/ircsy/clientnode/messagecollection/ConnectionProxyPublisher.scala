@@ -1,6 +1,6 @@
 package pl.jaca.ircsy.clientnode.messagecollection
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{ActorLogging, Actor, ActorRef}
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
@@ -13,8 +13,9 @@ import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{Unregis
   * @author Jaca777
   *         Created 2016-05-05 at 12
   */
-class ConnectionProxyPublisher(connection: ConnectionDesc, sharding: ActorRef, pubSubMediator: ActorRef) extends Actor {
+class ConnectionProxyPublisher(connection: ConnectionDesc, sharding: ActorRef, pubSubMediator: ActorRef) extends Actor with ActorLogging {
 
+  log.debug(s"Starting connection proxy publisher ($connection), registering observer...")
   val observer = Observer(self, subjects = Set(ClassFilterSubject(classOf[JoinedChannel], classOf[LeftChannel]), OnRegisterStateSubject))
   sharding ! ForwardToProxy(connection, RegisterObserver(observer))
 
@@ -39,6 +40,7 @@ class ConnectionProxyPublisher(connection: ConnectionDesc, sharding: ActorRef, p
         pubSubMediator ! Publish(s"users-${desc.serverDesc}", UserConnectionFound(desc, sharding))
 
     case Stop =>
+      log.debug(s"Stopping connection proxy publisher ($connection)...")
       sharding ! ForwardToProxy(connection, UnregisterObserver(observer))
   }
 }
