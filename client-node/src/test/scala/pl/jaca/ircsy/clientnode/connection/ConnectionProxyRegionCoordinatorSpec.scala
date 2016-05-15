@@ -14,7 +14,7 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest._
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{Start, Stop}
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{ForwardToProxy, StartProxy, StopProxy}
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.InitializeConnection
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.Initialize
 import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterSharding
 
 import scala.concurrent.{Future, ExecutionContextExecutor}
@@ -64,7 +64,7 @@ class ConnectionProxyRegionCoordinatorSpec extends {
       val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, factory))
       coordinator ! StartProxy(testDesc)
 
-      shardingProbe.expectMsg(ForwardToProxy(testDesc, InitializeConnection(testDesc, factory)))
+      shardingProbe.expectMsg(ForwardToProxy(testDesc, Initialize(testDesc, factory)))
       shardingProbe.expectMsg(ForwardToProxy(testDesc, Start))
     }
 

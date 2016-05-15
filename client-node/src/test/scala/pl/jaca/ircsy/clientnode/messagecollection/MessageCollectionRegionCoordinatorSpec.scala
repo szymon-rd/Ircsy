@@ -10,7 +10,7 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec, WordSpecLike}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.Start
 import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ServerDesc}
-import pl.jaca.ircsy.clientnode.messagecollection.MessageCollectorSupervisor.Stop
+import pl.jaca.ircsy.clientnode.messagecollection.PrivateMessageCollectorSupervisor.Stop
 import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterSharding
 
 /**

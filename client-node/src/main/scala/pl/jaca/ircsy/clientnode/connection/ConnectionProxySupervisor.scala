@@ -3,7 +3,7 @@ package pl.jaca.ircsy.clientnode.connection
 import akka.actor.SupervisorStrategy.{Restart, Stop}
 import akka.actor._
 import akka.util.Timeout
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.InitializeConnection
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.Initialize
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -23,15 +23,15 @@ class ConnectionProxySupervisor extends Actor {
     }
 
   def receive = {
-    case InitializeConnection(desc, factory) =>
+    case Initialize(desc, factory) =>
       val proxy = context.actorOf(Props(new ConnectionObservableProxy(desc, factory)))
-      context.watch(proxy)
+      context watch proxy
       context become supervising(proxy)
   }
 
   def supervising(proxy: ActorRef): Receive = {
-    case msg => proxy ! msg
     case Terminated(_) => context.stop(self)
+    case msg => proxy ! msg
   }
 
   implicit val timeout = Timeout(2 seconds)
@@ -39,6 +39,6 @@ class ConnectionProxySupervisor extends Actor {
 
 object ConnectionProxySupervisor {
 
-  case class InitializeConnection(connectionDesc: ConnectionDesc, connectionFactory: ChatConnectionFactory)
+  case class Initialize(connectionDesc: ConnectionDesc, connectionFactory: ChatConnectionFactory)
 
 }

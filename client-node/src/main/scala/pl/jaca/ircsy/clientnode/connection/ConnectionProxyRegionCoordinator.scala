@@ -7,7 +7,7 @@ import akka.cluster.sharding.ShardCoordinator.LeastShardAllocationStrategy
 import akka.cluster.sharding.ShardRegion.{EntityId, ShardId}
 import akka.cluster.sharding.{ShardCoordinator, ShardRegion, ClusterSharding, ClusterShardingSettings}
 import akka.persistence.PersistentActor
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.InitializeConnection
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.Initialize
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{StopProxy, ShardIdLength, ForwardToProxy, StartProxy}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{Stop, Start}
 import pl.jaca.ircsy.clientnode.sharding.{RegionAwareClusterSharding, RegionAwareClusterShardingImpl}
@@ -47,7 +47,7 @@ class ConnectionProxyRegionCoordinator(sharding: RegionAwareClusterSharding, con
 
   override def receive: Receive = {
     case StartProxy(desc) =>
-      listenerRegion ! ForwardToProxy(desc, InitializeConnection(desc,connectionFactory))
+      listenerRegion ! ForwardToProxy(desc, Initialize(desc,connectionFactory))
       listenerRegion ! ForwardToProxy(desc, Start)
     case StopProxy(desc) =>
       listenerRegion ! ForwardToProxy(desc, Stop)

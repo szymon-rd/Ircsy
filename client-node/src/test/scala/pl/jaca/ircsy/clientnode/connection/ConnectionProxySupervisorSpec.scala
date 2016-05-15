@@ -5,7 +5,7 @@ import akka.testkit.{TestKitExtension, TestKitBase, TestKit}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest._
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.InitializeConnection
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.Initialize
 import rx.lang.scala.Observable
 import scala.language.postfixOps
 
@@ -28,7 +28,7 @@ class ConnectionProxySupervisorSpec extends {
       (connection.channelMessages _).expects().returns(Observable.empty)
       (connection.privateMessages _).expects().returns(Observable.empty)
       val proxy = system.actorOf(Props(new ConnectionProxySupervisor()))
-      proxy ! InitializeConnection(testDesc, factory)
+      proxy ! Initialize(testDesc, factory)
       proxy ! Start
       Thread.sleep(200)
     }

@@ -28,6 +28,7 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
   override def receiveRecover: Receive = {
     case SnapshotOffer(_, offeredState: ProxyState) =>
       setState(offeredState)
+    case Start => start()
     case RegisterObserver(observer) => registerObserver(observer)
     case UnregisterObserver(observer) => unregisterObserver(observer)
     case JoinChannel(channel) => joinChannel(channel)
@@ -74,13 +75,11 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
   }
 
   private def stop() {
-    val disconnectingResult = disconnectFromServer()
-    disconnectingResult foreach {
-      _ =>
-        state = state.copy(running = false, observers = Set.empty)
-        saveSnapshot(state)
-    }
-    notifyResult(disconnectingResult, DisconnectedFromServer(connectionDesc), FailedToDisconnectFromServer(connectionDesc))
+    val result = disconnectFromServer()
+    notifyResult(result, DisconnectedFromServer(connectionDesc), FailedToDisconnectFromServer(connectionDesc))
+    state = state.copy(running = false, observers = Set.empty)
+    saveSnapshot(state)
+    context.stop(self)
   }
 
   private def disconnectFromServer(): Try[Unit] = Try {
