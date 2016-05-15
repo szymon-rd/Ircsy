@@ -6,6 +6,8 @@ import akka.actor.Actor.Receive
 import pl.jaca.ircsy.clientnode.connection.ServerDesc
 import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollectorSupervisor.Initialize
 import pl.jaca.ircsy.clientnode.messagecollection.repository.MessageRepositoryFactory
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 /**
   * @author Jaca777
