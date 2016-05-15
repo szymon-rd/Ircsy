@@ -19,3 +19,6 @@ class MessageCollectionRegionCoordinator(sharding: RegionAwareClusterSharding, r
     case _ =>
   }
 }
+object MessageCollectionRegionCoordinator {
+
+}

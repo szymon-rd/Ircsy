@@ -5,7 +5,8 @@ import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 import akka.persistence.PersistentActor
 import pl.jaca.ircsy.clientnode.connection.ConnectionDesc
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
-import pl.jaca.ircsy.clientnode.messagecollection.ConnectionActivityObserver.{FindUserConnection, UserConnectionFound, FindChannelConnection, ChannelConnectionFound}
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
+import pl.jaca.ircsy.clientnode.messagecollection.ConnectionProxyPublisher.{FindUserConnection, UserConnectionFound, FindChannelConnection, ChannelConnectionFound}
 import pl.jaca.ircsy.clientnode.messagecollection.PrivateMessageCollector.Stop
 import pl.jaca.ircsy.clientnode.messagecollection.repository.MessageRepositoryFactory
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{ClassFilterSubject, UnregisterObserver, RegisterObserver, Observer}
@@ -29,9 +30,9 @@ class PrivateMessageCollector(connectionDesc: ConnectionDesc, pubSubMediator: Ac
   override def receive: Receive = lookingForProxy()
 
   def lookingForProxy(broadcasting: Cancellable): Receive = {
-    case UserConnectionFound(`connectionDesc`, proxy) =>
-      proxy ! RegisterObserver(observer)
-      context become collecting(proxy)
+    case UserConnectionFound(`connectionDesc`, sharding) =>
+      sharding ! ForwardToProxy(connectionDesc, RegisterObserver(observer))
+      context become collecting(sharding)
     case Stop =>
       stop()
   }
@@ -42,19 +43,18 @@ class PrivateMessageCollector(connectionDesc: ConnectionDesc, pubSubMediator: Ac
     lookingForProxy(broadcasting)
   }
 
-  def collecting(proxy: ActorRef): Receive = {
+  def collecting(sharding: ActorRef): Receive = {
     case PrivateMessageReceived(message) =>
       repository.addPrivateMessage(connectionDesc.serverDesc, message)
     case DisconnectedFromServer(`connectionDesc`) =>
       context become lookingForProxy()
     case Stop =>
-      proxy ! UnregisterObserver(observer)
+      sharding ! ForwardToProxy(connectionDesc, UnregisterObserver(observer))
       stop()
   }
 
-  def stop() = {
-    context.stop(self)
-  }
+  def stop() = context.stop(self)
+
 }
 object PrivateMessageCollector {
   object Stop

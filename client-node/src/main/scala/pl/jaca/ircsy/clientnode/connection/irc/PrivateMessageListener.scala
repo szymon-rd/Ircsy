@@ -4,6 +4,7 @@ import java.time.LocalDate
 
 import com.ircclouds.irc.api.domain.messages.UserPrivMsg
 import com.ircclouds.irc.api.listeners.VariousMessageListenerAdapter
+import pl.jaca.ircsy.chat.PrivateChat
 import pl.jaca.ircsy.chat.messages.PrivateMessage
 import rx.lang.scala.Subject
 
@@ -13,6 +14,7 @@ import rx.lang.scala.Subject
   */
 class PrivateMessageListener(messages: Subject[PrivateMessage]) extends VariousMessageListenerAdapter {
   override def onUserPrivMessage(msg: UserPrivMsg): Unit = {
-    messages.onNext(new PrivateMessage(LocalDate.now(), new ChatUserAdapter(msg.getSource), msg.getText))
+    val chat = new PrivateChat(msg.getToUser, msg.getSource.getNick)
+    messages.onNext(new PrivateMessage(LocalDate.now(), chat, new ChatUserAdapter(msg.getSource), msg.getText))
   }
 }

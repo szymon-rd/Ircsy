@@ -9,16 +9,21 @@ import akka.testkit.{TestKitBase, TestProbe, TestActorRef, TestKit}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec, WordSpecLike}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.Start
+import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ServerDesc}
+import pl.jaca.ircsy.clientnode.messagecollection.MessageCollectorSupervisor.Stop
 import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterSharding
 
 /**
   * @author Jaca777
   *         Created 2016-05-02 at 12
   */
-class MessageCollectionRegionCoordinatorSpec extends { //TODO
+class MessageCollectionRegionCoordinatorSpec extends {
   implicit val system = ActorSystem("ConnectionProxyRegionCoordinatorSpec")
 } with WordSpec with TestKitBase with Matchers with MockFactory {
 
+
+  val serverDesc = ServerDesc("foo", 42)
+  val connectionDesc = ConnectionDesc(serverDesc, "nick")
 
   class MockableClusterSharding extends ClusterSharding(system.asInstanceOf[ExtendedActorSystem]) {
     override def start(typeName: String,
@@ -32,18 +37,29 @@ class MessageCollectionRegionCoordinatorSpec extends { //TODO
 
   "MessageCollectionRegionCoordinator" should {
 
-    "start sharding region" in {
+/*    "start sharding region" in {
       val sharding = mock[RegionAwareClusterSharding]
-      /*(sharding.findOrStartRegion _).expects(system, "")*/
+      (sharding.findOrStartRegion _).expects(system, "Collector", Props[MessageCollectorSupervisor], *, *, Stop)
       TestActorRef(new MessageCollectionRegionCoordinator(sharding, null))
+    }*/
+
+/*    "start channel messages collection" in {
+      val shardingProbe = TestProbe()
+      val sharding = mock[RegionAwareClusterSharding]
+     (sharding.findOrStartRegion _).expects(*, *, *, *, *, *).returns(shardingProbe.ref)
+      val coordinator = TestActorRef(new MessageCollectionRegionCoordinator(sharding, null))
+      coordinator ! StartChannelMessageCollector(serverDesc, "channel")
+      shardingProbe.expectMsg(ForwardToPrivateMessageCollector(connectionDesc, Start))
     }
 
-    "start messages collection" in {
-      val collectorProbe = TestProbe()
+    "start private messages collection" in {
+      val shardingProbe = TestProbe()
       val sharding = mock[RegionAwareClusterSharding]
-     /* (sharding.shardRegion _).expects(*).returns(collectorProbe.ref)*/
+      (sharding.findOrStartRegion _).expects(*, *, *, *, *, *).returns(shardingProbe.ref)
       val coordinator = TestActorRef(new MessageCollectionRegionCoordinator(sharding, null))
-    }
+      coordinator ! StartPrivateMessageCollector(serverDesc, "channel")
+      shardingProbe.expectMsg(ForwardToChannelMessageCollector(serverDesc, "channel", InitializeConnection(testDesc, factory)))
+    }*/
 
   }
 }

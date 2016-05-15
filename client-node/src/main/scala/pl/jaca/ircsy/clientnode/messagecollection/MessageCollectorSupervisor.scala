@@ -14,5 +14,5 @@ class MessageCollectorSupervisor {
 
 }
 object MessageCollectorSupervisor {
-
+  object Stop
 }

@@ -21,7 +21,6 @@ class ConnectionProxyRegionCoordinator(sharding: RegionAwareClusterSharding, con
   val extractEntityId: ShardRegion.ExtractEntityId = {
     case ForwardToProxy(desc, msg) =>
       (toListenerId(desc), msg)
-
   }
 
   private def toListenerId(desc: ConnectionDesc): EntityId = desc.toString

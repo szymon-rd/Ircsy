@@ -10,8 +10,9 @@ import org.scalatest.{Matchers, WordSpec}
 import pl.jaca.ircsy.chat.PrivateChat
 import pl.jaca.ircsy.chat.messages.{ChatUser, PrivateMessage}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
 import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ServerDesc}
-import pl.jaca.ircsy.clientnode.messagecollection.ConnectionActivityObserver.{UserConnectionFound, FindUserConnection, ChannelConnectionFound, FindChannelConnection}
+import pl.jaca.ircsy.clientnode.messagecollection.ConnectionProxyPublisher.{UserConnectionFound, FindUserConnection, ChannelConnectionFound, FindChannelConnection}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.{MessageRepositoryFactory, MessageRepository}
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{ClassFilterSubject, Observer, RegisterObserver}
 import scala.concurrent.duration._
@@ -55,50 +56,50 @@ class PrivateMessageCollectorSpec extends {
 
     "register observer" in {
       val mediator = TestProbe()
-      val proxy = TestProbe()
+      val sharding = TestProbe()
       val repository = mock[MessageRepository]
       val factory = mock[MessageRepositoryFactory]
       (factory.newRepository _).expects().returns(repository)
       val collector = system.actorOf(Props(new PrivateMessageCollector(connectionDesc, mediator.ref, factory)))
       mediator.receiveN(2)
-      collector ! UserConnectionFound(connectionDesc, proxy.ref)
-      proxy.expectMsg(RegisterObserver(Observer(collector, Set(ClassFilterSubject(classOf[PrivateMessageReceived], classOf[DisconnectedFromServer])))))
+      collector ! UserConnectionFound(connectionDesc, sharding.ref)
+      sharding.expectMsg(ForwardToProxy(connectionDesc, RegisterObserver(Observer(collector, Set(ClassFilterSubject(classOf[PrivateMessageReceived], classOf[DisconnectedFromServer]))))))
     }
 
 
     "collect messages in" in {
       val mediator = TestProbe()
-      val proxy = TestProbe()
+      val sharding = TestProbe()
       val repository = mock[MessageRepository]
       val factory = mock[MessageRepositoryFactory]
       (factory.newRepository _).expects().returns(repository)
 
       val user1 = new ChatUser("foo1", "bar1", "foo1")
       val user2 = new ChatUser("foo", "foor", "baarr")
-      val privateChat = new PrivateChat(user1, user2)
-      val message = new PrivateMessage(privateChat, LocalDate.now(), user2, "message")
+      val privateChat = new PrivateChat("foo1", "foo2")
+      val message = new PrivateMessage(LocalDate.now(), privateChat, user2, "message")
       (repository.addPrivateMessage _).expects(serverDesc, message)
 
       val collector = system.actorOf(Props(new PrivateMessageCollector(connectionDesc, mediator.ref, factory)))
       mediator.receiveN(2)
-      collector ! UserConnectionFound(connectionDesc, proxy.ref)
-      proxy.receiveN(1)
-      proxy.send(collector, PrivateMessageReceived(message))
+      collector ! UserConnectionFound(connectionDesc, sharding.ref)
+      sharding.receiveN(1)
+      sharding.send(collector, PrivateMessageReceived(message))
       Thread.sleep(200)
     }
 
     "start looking for new proxy when observed proxy disconnects" in {
       val mediator = TestProbe()
-      val proxy = TestProbe()
+      val sharding = TestProbe()
       val factory = mock[MessageRepositoryFactory]
       val repository = mock[MessageRepository]
       (factory.newRepository _).expects().returns(repository)
 
       val collector = system.actorOf(Props(new PrivateMessageCollector(connectionDesc, mediator.ref, factory)))
       mediator.receiveN(2)
-      collector ! UserConnectionFound(connectionDesc, proxy.ref)
-      proxy.receiveN(1)
-      proxy.send(collector, DisconnectedFromServer(connectionDesc))
+      collector ! UserConnectionFound(connectionDesc, sharding.ref)
+      sharding.receiveN(1)
+      sharding.send(collector, DisconnectedFromServer(connectionDesc))
       mediator.expectMsg(Publish("users-foo:42", FindUserConnection(connectionDesc)))
     }
   }

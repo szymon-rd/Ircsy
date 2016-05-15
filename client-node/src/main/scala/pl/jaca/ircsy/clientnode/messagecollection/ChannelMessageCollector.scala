@@ -6,9 +6,10 @@ import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 import akka.persistence.PersistentActor
 import org.scalatest.path
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ChannelSubject, ChannelMessageReceived, LeftChannel}
-import pl.jaca.ircsy.clientnode.connection.ServerDesc
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
+import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollector.Stop
-import pl.jaca.ircsy.clientnode.messagecollection.ConnectionActivityObserver.{ChannelConnectionFound, FindChannelConnection, FindUserConnection}
+import pl.jaca.ircsy.clientnode.messagecollection.ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection, FindUserConnection}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.MessageRepositoryFactory
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{UnregisterObserver, Observer, RegisterObserver}
 import pl.jaca.ircsy.util.config.ConfigUtil.Configuration
@@ -32,9 +33,9 @@ class ChannelMessageCollector(serverDesc: ServerDesc, channelName: String, pubSu
   override def receive: Receive = lookingForProxy()
 
   def lookingForProxy(broadcasting: Cancellable): Receive = {
-    case ChannelConnectionFound(`serverDesc`, `channelName`, proxy) =>
-      proxy ! RegisterObserver(observer)
-      context become collecting(proxy)
+    case ChannelConnectionFound(`channelName`, connection, sharding) if connection.serverDesc == serverDesc =>
+      sharding ! ForwardToProxy(connection, RegisterObserver(observer))
+      context become collecting(connection, sharding)
     case Stop =>
       stop()
   }
@@ -45,21 +46,22 @@ class ChannelMessageCollector(serverDesc: ServerDesc, channelName: String, pubSu
     lookingForProxy(broadcasting)
   }
 
-  def collecting(proxy: ActorRef): Receive = {
+  def collecting(connection: ConnectionDesc, sharding: ActorRef): Receive = {
     case ChannelMessageReceived(message) =>
       repository.addChannelMessage(serverDesc, message)
     case LeftChannel => context become lookingForProxy()
     case Stop =>
-      proxy ! UnregisterObserver(observer)
+      sharding ! ForwardToProxy(connection, UnregisterObserver(observer))
       stop()
   }
 
-  def stop() = {
-    context.stop(self)
-  }
+  def stop() = context.stop(self)
 
 }
+
 object ChannelMessageCollector {
+
   object Stop
+
 }
 

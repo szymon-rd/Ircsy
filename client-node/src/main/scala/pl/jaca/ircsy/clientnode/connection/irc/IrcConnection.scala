@@ -45,14 +45,14 @@ class IrcConnection(executionContext: ExecutionContext) extends ChatConnection {
     toFuture((irc.message(_: String, _: String, _: api.Callback[String])).curried(user)(msg))
 
   override def joinChannel(name: String): Future[Unit] =
-    toFuture((irc.joinChannel (_: String, _: api.Callback[IRCChannel])).curried(name))
+    toFuture((irc.joinChannel(_: String, _: api.Callback[IRCChannel])).curried(name))
 
 
   override def sendChannelMessage(channel: String, msg: String): Future[Unit] =
-    toFuture((irc.message (_: String, _: String, _: api.Callback[String])).curried(channel)(msg))
+    toFuture((irc.message(_: String, _: String, _: api.Callback[String])).curried(channel)(msg))
 
   override def leaveChannel(name: String): Future[Unit] =
-    toFuture((irc.leaveChannel (_: String, _: api.Callback[String])).curried(name))
+    toFuture((irc.leaveChannel(_: String, _: api.Callback[String])).curried(name))
 
   private def toFuture[T](fun: (api.Callback[T]) => Unit): Future[Unit] = {
     val callback = new IrcCallback[T]
