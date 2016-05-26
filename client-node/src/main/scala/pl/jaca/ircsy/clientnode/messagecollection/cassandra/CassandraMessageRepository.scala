@@ -43,7 +43,7 @@ class CassandraMessageRepository(contactPoints: Set[InetAddress],
   }
 
   override def addPrivateMessage(server: ServerDesc, message: PrivateMessage): Try[Unit] = Try {
-    val statement = privateMessageStatement.bind(server.toString, message.getChat.getMainParticiantName, message.getChat.getSecondParticipantName, message.getTime, message.getAuthor, message.getText)
+    val statement = privateMessageStatement.bind(server.toString, message.getChat.getMainParticipantName, message.getChat.getSecondParticipantName, message.getTime, message.getAuthor, message.getText)
     session.execute(statement)
   }
 

@@ -1,12 +1,13 @@
 package pl.jaca.ircsy.clientnode.connection
 
-import akka.actor.{ExtendedActorSystem, ActorSystem, Props}
-import akka.testkit.{TestKitExtension, TestKitBase, TestKit}
+import akka.actor.{ActorSystem, ExtendedActorSystem, Props}
+import akka.testkit.{TestKit, TestKitBase, TestKitExtension, TestProbe}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest._
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.Initialize
 import rx.lang.scala.Observable
+
 import scala.language.postfixOps
 
 /**
@@ -23,13 +24,14 @@ class ConnectionProxySupervisorSpec extends {
     "start a proxy" in {
       val factory = mock[ChatConnectionFactory]
       val connection = mock[ChatConnection]
+      val mediator = TestProbe()
       (factory.newConnection _).expects(*).returns(connection)
       (connection.connectTo _).expects(testDesc, *)
       (connection.channelMessages _).expects().returns(Observable.empty)
       (connection.privateMessages _).expects().returns(Observable.empty)
-      val proxy = system.actorOf(Props(new ConnectionProxySupervisor()))
-      proxy ! Initialize(testDesc, factory)
-      proxy ! Start
+      val supervisor = system.actorOf(Props(new ConnectionProxySupervisor))
+      supervisor ! Initialize(testDesc, factory, mediator.ref)
+      supervisor ! Start
       Thread.sleep(200)
     }
   }

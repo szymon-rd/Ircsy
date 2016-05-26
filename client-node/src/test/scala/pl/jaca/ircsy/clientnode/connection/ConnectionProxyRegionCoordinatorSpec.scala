@@ -32,7 +32,7 @@ class ConnectionProxyRegionCoordinatorSpec extends {
 
 
   val testDesc: ConnectionDesc = ConnectionDesc(ServerDesc("foo", 42), "bar")
-
+  val mediator = TestProbe().ref
 
   "ConnectionProxyRegionCoordinator" should {
 
@@ -50,7 +50,7 @@ class ConnectionProxyRegionCoordinatorSpec extends {
     "start region" in {
       val sharding = mock[RegionAwareClusterSharding]
       (sharding.findOrStartRegion _).expects(system, "ConnectionProxy", *, *, *, Stop)
-      TestActorRef(new ConnectionProxyRegionCoordinator(sharding, null))
+      TestActorRef(new ConnectionProxyRegionCoordinator(sharding, null, mediator))
     }
 
 
@@ -61,10 +61,10 @@ class ConnectionProxyRegionCoordinatorSpec extends {
       (sharding.findOrStartRegion _).expects(*,*,*,*,*,*).returns(shardingProbe.ref)
 
       val factory = mock[ChatConnectionFactory]
-      val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, factory))
+      val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, factory, mediator))
       coordinator ! StartProxy(testDesc)
 
-      shardingProbe.expectMsg(ForwardToProxy(testDesc, Initialize(testDesc, factory)))
+      shardingProbe.expectMsg(ForwardToProxy(testDesc, Initialize(testDesc, factory, mediator)))
       shardingProbe.expectMsg(ForwardToProxy(testDesc, Start))
     }
 
@@ -73,7 +73,7 @@ class ConnectionProxyRegionCoordinatorSpec extends {
       val sharding = mock[RegionAwareClusterSharding]
       (sharding.findOrStartRegion _).expects(*,*,*,*,*,*).returns(shardingProbe.ref)
 
-      val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, mock[ChatConnectionFactory]))
+      val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, mock[ChatConnectionFactory], mediator))
       coordinator ! ForwardToProxy(testDesc, 2)
 
       shardingProbe.expectMsg(ForwardToProxy(testDesc, 2))
@@ -84,7 +84,7 @@ class ConnectionProxyRegionCoordinatorSpec extends {
       val sharding = mock[RegionAwareClusterSharding]
       (sharding.findOrStartRegion _).expects(*,*,*,*,*,*).returns(shardingProbe.ref)
 
-      val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, mock[ChatConnectionFactory]))
+      val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, mock[ChatConnectionFactory], mediator))
       coordinator ! StartProxy(testDesc)
       shardingProbe.fishForMessage(max = 1 second) { case msg: ForwardToProxy => true } //Init
       shardingProbe.fishForMessage(max = 1 second) { case msg: ForwardToProxy => true } //Start
@@ -97,7 +97,7 @@ class ConnectionProxyRegionCoordinatorSpec extends {
       val sharding = mock[RegionAwareClusterSharding]
       (sharding.findOrStartRegion _).expects(*,*,*,*,*,*).returns(shardingProbe.ref)
 
-      val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, mock[ChatConnectionFactory]))
+      val coordinator = TestActorRef(new ConnectionProxyRegionCoordinator(sharding, mock[ChatConnectionFactory], mediator))
       coordinator ! Stop
       shardingProbe.expectMsg(ShardRegion.GracefulShutdown)
     }

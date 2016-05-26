@@ -9,26 +9,26 @@ import akka.cluster.sharding.{ShardCoordinator, ShardRegion, ClusterSharding, Cl
 import akka.persistence.PersistentActor
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.Initialize
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{StopProxy, ShardIdLength, ForwardToProxy, StartProxy}
-import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{Stop, Start}
+import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ConnectionCmd, Stop, Start}
 import pl.jaca.ircsy.clientnode.sharding.{RegionAwareClusterSharding, RegionAwareClusterShardingImpl}
 
 /**
   * @author Jaca777
   *         Created 2016-05-01 at 23
   */
-class ConnectionProxyRegionCoordinator(sharding: RegionAwareClusterSharding, connectionFactory: ChatConnectionFactory) extends Actor with ActorLogging {
+class ConnectionProxyRegionCoordinator(sharding: RegionAwareClusterSharding, connectionFactory: ChatConnectionFactory, pubSubMediator: ActorRef) extends Actor with ActorLogging {
 
   log.info("Starting connection proxy region coordinator...")
 
   val extractEntityId: ShardRegion.ExtractEntityId = {
-    case ForwardToProxy(desc, msg) =>
-      (toListenerId(desc), msg)
+    case ForwardToProxy(desc, cmd) =>
+      (toListenerId(desc), cmd)
   }
 
   private def toListenerId(desc: ConnectionDesc): EntityId = desc.toString
 
   val extractShardId: ShardRegion.ExtractShardId = {
-    case ForwardToProxy(desc, msg) =>
+    case ForwardToProxy(desc, cmd) =>
       toShardId(desc)
   }
 
@@ -50,7 +50,7 @@ class ConnectionProxyRegionCoordinator(sharding: RegionAwareClusterSharding, con
   override def receive: Receive = {
     case StartProxy(desc) =>
       log.debug(s"Starting connection proxy: $desc...")
-      listenerRegion ! ForwardToProxy(desc, Initialize(desc,connectionFactory))
+      listenerRegion ! ForwardToProxy(desc, Initialize(desc, connectionFactory, pubSubMediator))
       listenerRegion ! ForwardToProxy(desc, Start)
     case StopProxy(desc) =>
       log.debug(s"Stopping connection proxy: $desc...")
@@ -71,7 +71,7 @@ object ConnectionProxyRegionCoordinator {
 
   case class StopProxy(desc: ConnectionDesc)
 
-  case class ForwardToProxy(desc: ConnectionDesc, msg: Any)
+  case class ForwardToProxy(desc: ConnectionDesc, cmd: Any)
 
   object Stop
 

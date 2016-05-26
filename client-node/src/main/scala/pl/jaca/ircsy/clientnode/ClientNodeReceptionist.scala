@@ -1,10 +1,15 @@
 package pl.jaca.ircsy.clientnode
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, ActorRef, Props}
+import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.sharding.ClusterSharding
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator
+import pl.jaca.ircsy.clientnode.ClientNodeReceptionist._
+import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ChannelMessageReceived, ConnectionCmd, PrivateMessageReceived}
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
+import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ConnectionProxyRegionCoordinator, ServerDesc}
 import pl.jaca.ircsy.clientnode.connection.irc.IrcConnectionFactory
 import pl.jaca.ircsy.clientnode.messagecollection.MessageCollectionRegionCoordinator
+import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol._
 import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterShardingImpl
 
 /**
@@ -13,18 +18,38 @@ import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterShardingImpl
   */
 class ClientNodeReceptionist extends Actor {
 
-  val sharding = ClusterSharding(context.system)
+  val sharding = new RegionAwareClusterShardingImpl(ClusterSharding(context.system))
 
-  val proxyCoordinator = context.actorOf(Props(new ConnectionProxyRegionCoordinator(new RegionAwareClusterShardingImpl(sharding), new IrcConnectionFactory)))
+  val mediator = DistributedPubSub(context.system).mediator
 
-  val messageCollectionCoordinator = context.actorOf(Props(new MessageCollectionRegionCoordinator(new RegionAwareClusterShardingImpl(sharding), null)))
+  val proxyCoordinator = context.actorOf(Props(new ConnectionProxyRegionCoordinator(sharding, new IrcConnectionFactory, mediator)))
+
+  val messageCollectionCoordinator = context.actorOf(Props(new MessageCollectionRegionCoordinator(sharding, null)))
 
   override def receive: Actor.Receive = {
-    case _ =>
+    case StartConnection(connection) =>
+    case RunCommand(connection, cmd) =>
+      proxyCoordinator ! ForwardToProxy(connection, cmd)
+    case ObserveUser(connection, observer) =>
+      proxyCoordinator ! ForwardToProxy(connection, RegisterObserver(Observer(observer, Set(UserObserverSubject))))
+    case StopObservingUser(connection, observer) =>
+      proxyCoordinator ! ForwardToProxy(connection, UnregisterObserver(Observer(observer, Set(UserObserverSubject))))
   }
+
+
 
 }
 
 object ClientNodeReceptionist {
 
+  val UserObserverSubject = ClassFilterSubject(classOf[ChannelMessageReceived], classOf[PrivateMessageReceived])
+
+  case class StartConnection(connection: ConnectionDesc)
+  private[clientnode] case class RunCommand(connection: ConnectionDesc, cmd: Any)
+  object RunCommand {
+    def apply(connection: ConnectionDesc, connectionCmd: ConnectionCmd) = new RunCommand(connection, connectionCmd)
+    def apply(connection: ConnectionDesc, observableCmd: ObservableCmd) = new RunCommand(connection, observableCmd)
+  }
+  case class ObserveUser(connectionDesc: ConnectionDesc, observer: ActorRef)
+  case class StopObservingUser(connectionDesc: ConnectionDesc, observer: ActorRef)
 }

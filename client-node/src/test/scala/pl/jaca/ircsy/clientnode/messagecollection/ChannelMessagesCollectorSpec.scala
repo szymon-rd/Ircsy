@@ -2,21 +2,21 @@ package pl.jaca.ircsy.clientnode.messagecollection
 
 import java.time.LocalDate
 
-import akka.actor.{Terminated, Props, ActorSystem}
+import akka.actor.{ActorSystem, Props, Terminated}
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
-
-import akka.testkit.{TestActorRef, TestProbe, TestKitBase, TestKit}
+import akka.testkit.{TestActorRef, TestKit, TestKitBase, TestProbe}
 import org.scalamock.matchers.MockParameter
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec, WordSpecLike}
-import pl.jaca.ircsy.chat.messages.{ChatUser, ChannelMessage}
-import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{LeftChannel, ChannelMessageReceived, ChannelSubject}
+import pl.jaca.ircsy.chat.messages.{ChannelMessage, ChatUser}
+import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ChannelMessageReceived, ChannelSubject, LeftChannel}
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
-import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ServerDesc}
+import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ConnectionObservableProxy, ConnectionProxyPublisher, ServerDesc}
 import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollector.Stop
-import pl.jaca.ircsy.clientnode.messagecollection.ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection, FindUserConnection}
-import pl.jaca.ircsy.clientnode.messagecollection.repository.{MessageRepositoryFactory, MessageRepository}
-import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{UnregisterObserver, ClassFilterSubject, Observer, RegisterObserver}
+import ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection, FindUserConnection}
+import pl.jaca.ircsy.clientnode.messagecollection.repository.{MessageRepository, MessageRepositoryFactory}
+import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{ClassFilterSubject, Observer, RegisterObserver, UnregisterObserver}
+
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -58,20 +58,20 @@ class ChannelMessagesCollectorSpec extends {
 
     "register observer" in {
       val mediator = TestProbe()
-      val sharding = TestProbe()
+      val proxy = TestProbe()
       val repository = mock[MessageRepository]
       val factory = mock[MessageRepositoryFactory]
       (factory.newRepository _).expects().returns(repository)
       val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
       mediator.receiveN(2) // Subscribe, publish
-      collector ! ChannelConnectionFound("bar", connection, sharding.ref)
-      sharding.expectMsg(ForwardToProxy(connection, RegisterObserver(Observer(collector, Set(ChannelSubject("bar"))))))
+      collector ! ChannelConnectionFound("bar", connection, proxy.ref)
+      proxy.expectMsg(RegisterObserver(Observer(collector, Set(ChannelSubject("bar")))))
     }
 
 
     "collect messages in" in {
       val mediator = TestProbe()
-      val sharding = TestProbe()
+      val proxy = TestProbe()
       val repository = mock[MessageRepository]
       val factory = mock[MessageRepositoryFactory]
       (factory.newRepository _).expects().returns(repository)
@@ -80,41 +80,41 @@ class ChannelMessagesCollectorSpec extends {
 
       val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
       mediator.receiveN(2) // Subscribe, publish
-      collector ! ChannelConnectionFound("bar", connection, sharding.ref)
-      sharding.receiveN(1) // Register observer
-      sharding.send(collector, ChannelMessageReceived(message))
+      collector ! ChannelConnectionFound("bar", connection, proxy.ref)
+      proxy.receiveN(1) // Register observer
+      proxy.send(collector, ChannelMessageReceived(message))
       Thread.sleep(200)
     }
 
     "start looking for new proxy when observed proxy leaves channel" in {
       val mediator = TestProbe()
-      val sharding = TestProbe()
+      val proxy = TestProbe()
       val factory = mock[MessageRepositoryFactory]
       val repository = mock[MessageRepository]
       (factory.newRepository _).expects().returns(repository)
 
       val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
       mediator.receiveN(2) // Subscribe, publish
-      collector ! ChannelConnectionFound("bar", connection, sharding.ref)
-      sharding.receiveN(1) // Register observer
-      sharding.send(collector, LeftChannel("bar"))
+      collector ! ChannelConnectionFound("bar", connection, proxy.ref)
+      proxy.receiveN(1) // Register observer
+      proxy.send(collector, LeftChannel("bar"))
       mediator.expectMsg(Publish("channels-foo:42", FindChannelConnection(serverDesc, "bar")))
     }
 
     "unsubscribe and stop" in {
       val mediator = TestProbe()
-      val sharding = TestProbe()
+      val proxy = TestProbe()
       val factory = mock[MessageRepositoryFactory]
       val repository = mock[MessageRepository]
       (factory.newRepository _).expects().returns(repository)
       val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
       mediator.receiveN(2) // Subscribe, publish
-      collector ! ChannelConnectionFound("bar", connection, sharding.ref)
-      sharding.receiveN(1) // Register observer
+      collector ! ChannelConnectionFound("bar", connection, proxy.ref)
+      proxy.receiveN(1) // Register observer
 
       collector ! Stop
       watch(collector)
-      sharding.expectMsg(ForwardToProxy(connection, UnregisterObserver(Observer(collector, Set(ChannelSubject("bar"))))))
+      proxy.expectMsg(UnregisterObserver(Observer(collector, Set(ChannelSubject("bar")))))
       expectTerminated(collector)
     }
   }

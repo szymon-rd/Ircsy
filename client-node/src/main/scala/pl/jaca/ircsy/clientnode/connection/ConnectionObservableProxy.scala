@@ -1,14 +1,15 @@
 package pl.jaca.ircsy.clientnode.connection
 
 import akka.actor.{ActorLogging, ActorRef}
-import akka.persistence.{Recovery, AtLeastOnceDelivery, PersistentActor, SnapshotOffer}
+import akka.persistence.{AtLeastOnceDelivery, PersistentActor, Recovery, SnapshotOffer}
 import pl.jaca.ircsy.chat.messages.{ChannelMessage, PrivateMessage}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
+import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol._
 import rx.lang.scala.{Observable, Subject, Subscription}
+
 import scala.concurrent.duration._
 import scala.language.postfixOps
-
 import scala.util.Try
 
 /**
@@ -34,10 +35,11 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
     case JoinChannel(channel) => joinChannel(channel)
   }
 
+
+
   private def setState(state: ProxyState) {
     if (state.running) connectToServer()
     state.channels.foreach(joinChannel)
-    this.state = state
   }
 
   override def receiveCommand: Receive = {
@@ -60,7 +62,7 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
   }
 
   private def start() {
-    log.debug(s"Starting connection observable proxy ($connectionDesc)...")
+    log.debug(s"Starting connection proxy ($connectionDesc)...")
     val connectingResult = connectToServer()
     connectingResult.foreach {
       _ =>
@@ -78,7 +80,7 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
   }
 
   private def stop() {
-    log.debug(s"Stopping connection observable proxy ($connectionDesc)...")
+    log.debug(s"Stopping connection proxy ($connectionDesc)...")
     val result = disconnectFromServer()
     notifyResult(result, DisconnectedFromServer(connectionDesc), FailedToDisconnectFromServer(connectionDesc))
     state = state.copy(running = false, observers = Set.empty)
@@ -174,9 +176,11 @@ object ConnectionObservableProxy {
 
   val OnRegisterStateSubject = ClassFilterSubject(classOf[ProxyState])
 
-  object Start
+  trait ConnectionCmd
 
-  object Stop
+  object Start extends ConnectionCmd
+
+  object Stop extends ConnectionCmd
 
   case class ConnectedToServer(connectionDesc: ConnectionDesc)
 
@@ -186,9 +190,9 @@ object ConnectionObservableProxy {
 
   case class FailedToDisconnectFromServer(connectionDesc: ConnectionDesc) extends FailureNotification
 
-  case class JoinChannel(name: String)
+  case class JoinChannel(name: String) extends ConnectionCmd
 
-  case class LeaveChannel(name: String)
+  case class LeaveChannel(name: String) extends ConnectionCmd
 
   case class JoinedChannel(name: String)
 
@@ -198,9 +202,9 @@ object ConnectionObservableProxy {
 
   case class FailedToLeaveChannel(name: String) extends FailureNotification
 
-  case class SendChannelMessage(channel: String, msg: String)
+  case class SendChannelMessage(channel: String, msg: String) extends ConnectionCmd
 
-  case class SendPrivateMessage(user: String, msg: String)
+  case class SendPrivateMessage(user: String, msg: String) extends ConnectionCmd
 
   case class ChannelMessageReceived(channelMessage: ChannelMessage)
 

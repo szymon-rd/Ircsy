@@ -2,7 +2,9 @@ package pl.jaca.ircsy.clientnode.connection
 
 import akka.actor.SupervisorStrategy.{Restart, Stop}
 import akka.actor._
+import akka.cluster.pubsub.DistributedPubSub
 import akka.util.Timeout
+import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.ConnectionCmd
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.Initialize
 
 import scala.concurrent.duration._
@@ -25,17 +27,25 @@ class ConnectionProxySupervisor extends Actor with ActorLogging {
     }
 
   def receive = {
-    case Initialize(desc, factory) =>
+    case Initialize(desc: ConnectionDesc, factory: ChatConnectionFactory, mediator: ActorRef) =>
       log.debug(s"Initializing connection proxy ($desc)...")
       val proxy = context.actorOf(Props(new ConnectionObservableProxy(desc, factory)))
+      val publisher = context.actorOf(Props(new ConnectionProxyPublisher(desc, proxy, mediator)))
       context watch proxy
-      context become supervising(proxy)
+      context watch publisher
+      context become supervising(desc, proxy, publisher)
   }
 
-  def supervising(proxy: ActorRef): Receive = {
-    case Terminated(_) =>
+  def supervising(desc: ConnectionDesc, proxy: ActorRef, publisher: ActorRef): Receive = {
+    case Terminated(`proxy`) =>
       log.debug("Connection proxy stopped, stopping supervisor...")
+      context.stop(publisher)
       context.stop(self)
+    case Terminated(`publisher`) =>
+      val mediator = DistributedPubSub(context.system).mediator
+      val publisher = context.actorOf(Props(new ConnectionProxyPublisher(desc, proxy, mediator)))
+      context watch publisher
+      context become supervising(desc, proxy, publisher)
     case msg => proxy ! msg
   }
 
@@ -44,6 +54,6 @@ class ConnectionProxySupervisor extends Actor with ActorLogging {
 
 object ConnectionProxySupervisor {
 
-  case class Initialize(connectionDesc: ConnectionDesc, connectionFactory: ChatConnectionFactory)
+  private[clientnode] case class Initialize(desc: ConnectionDesc, factory: ChatConnectionFactory, mediator: ActorRef) extends ConnectionCmd
 
 }

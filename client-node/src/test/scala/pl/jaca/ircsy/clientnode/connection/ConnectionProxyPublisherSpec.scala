@@ -1,4 +1,4 @@
-package pl.jaca.ircsy.clientnode.messagecollection
+package pl.jaca.ircsy.clientnode.connection
 
 import akka.actor._
 import akka.cluster.pubsub.DistributedPubSub
@@ -7,9 +7,8 @@ import akka.testkit.{TestKitBase, TestProbe}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.ProxyState
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection, FindUserConnection, UserConnectionFound}
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
-import pl.jaca.ircsy.clientnode.connection.{ChatConnectionFactory, ConnectionDesc, ServerDesc}
-import pl.jaca.ircsy.clientnode.messagecollection.ConnectionProxyPublisher.{UserConnectionFound, FindUserConnection, ChannelConnectionFound, FindChannelConnection}
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.RegisterObserver
 
 import scala.concurrent.duration._
@@ -32,43 +31,43 @@ class ConnectionProxyPublisherSpec extends {
   "ConnectionProxyPublisher" should {
     "subscribe to server channels topic" in {
       val mediator = TestProbe()
-      val sharding = TestProbe()
-      val publisher = system.actorOf(Props(new ConnectionProxyPublisher(testDesc, sharding.ref, mediator.ref)))
-      sharding.expectMsgType[ForwardToProxy]
-      sharding.reply(testState)
+      val proxy = TestProbe()
+      val publisher = system.actorOf(Props(new ConnectionProxyPublisher(testDesc, proxy.ref, mediator.ref)))
+      proxy.expectMsgType[RegisterObserver]
+      proxy.reply(testState)
       mediator.expectMsg(Subscribe("channels-" + serverDesc, publisher))
     }
 
     "reply to broadcasted channel connection request if channel is available" in {
       val mediator = TestProbe()
-      val sharding = TestProbe()
-      val publisher = system.actorOf(Props(new ConnectionProxyPublisher(testDesc, sharding.ref, mediator.ref)))
-      sharding.receiveOne(300 millis)
-      sharding.reply(testState)
+      val proxy = TestProbe()
+      val publisher = system.actorOf(Props(new ConnectionProxyPublisher(testDesc, proxy.ref, mediator.ref)))
+      proxy.receiveOne(300 millis)
+      proxy.reply(testState)
       publisher ! FindChannelConnection(serverDesc, "foo")
       mediator.receiveOne(300 millis)
       mediator.receiveOne(300 millis)
-      mediator.expectMsg(Publish("channels-foo:42", ChannelConnectionFound("foo", testDesc, sharding.ref)))
+      mediator.expectMsg(Publish("channels-foo:42", ChannelConnectionFound("foo", testDesc, proxy.ref)))
     }
 
     "reply to broadcasted channel connection request if channel is not available" in {
       val mediator = TestProbe()
-      val sharding = TestProbe()
-      val publisher = system.actorOf(Props(new ConnectionProxyPublisher(testDesc, sharding.ref, mediator.ref)))
-      sharding.receiveOne(300 millis)
-      sharding.reply(testState)
+      val proxy = TestProbe()
+      val publisher = system.actorOf(Props(new ConnectionProxyPublisher(testDesc, proxy.ref, mediator.ref)))
+      proxy.receiveOne(300 millis)
+      proxy.reply(testState)
       publisher ! FindUserConnection(testDesc)
       mediator.receiveOne(300 millis)
       mediator.receiveOne(300 millis)
-      mediator.expectMsg(Publish("users-foo:42", UserConnectionFound(testDesc, sharding.ref)))
+      mediator.expectMsg(Publish("users-foo:42", UserConnectionFound(testDesc, proxy.ref)))
     }
 
     "not reply to broadcasted user connection request if available" in {
       val mediator = TestProbe()
-      val sharding = TestProbe()
-      val publisher = system.actorOf(Props(new ConnectionProxyPublisher(testDesc, sharding.ref, mediator.ref)))
-      sharding.receiveOne(300 millis)
-      sharding.reply(testState)
+      val proxy = TestProbe()
+      val publisher = system.actorOf(Props(new ConnectionProxyPublisher(testDesc, proxy.ref, mediator.ref)))
+      proxy.receiveOne(300 millis)
+      proxy.reply(testState)
       publisher ! FindUserConnection(testDesc.copy(username = "miras"))
       mediator.receiveOne(300 millis)
       mediator.receiveOne(300 millis)

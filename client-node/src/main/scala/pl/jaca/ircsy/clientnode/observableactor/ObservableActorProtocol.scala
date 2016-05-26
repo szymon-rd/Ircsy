@@ -7,8 +7,9 @@ import akka.actor.ActorRef
   *         Created 2016-05-04 at 20
   */
 object ObservableActorProtocol {
-  case class Observer(ref: ActorRef, subjects: Set[ObserverSubject])
+  trait ObservableCmd
 
+  case class Observer(ref: ActorRef, subjects: Set[ObserverSubject])
 
   abstract class ObserverSubject {
     def isInterestedIn(notification: Any): Boolean
@@ -18,7 +19,8 @@ object ObservableActorProtocol {
     override def isInterestedIn(notification: Any): Boolean = classes contains notification.getClass
   }
 
-  case class RegisterObserver(observer: Observer)
+  case class RegisterObserver(observer: Observer) extends ObservableCmd
 
-  case class UnregisterObserver(observer: Observer)
+  case class UnregisterObserver(observer: Observer) extends ObservableCmd
+
 }

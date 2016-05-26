@@ -5,16 +5,16 @@ package pl.jaca.ircsy.chat;
  *         Created 2016-05-14 at 11
  */
 public class PrivateChat {
-    private String mainParticiantName;
+    private String mainParticipantName;
     private String secondParticipantName;
 
-    public PrivateChat(String mainParticiantName, String secondParticipantName) {
-        this.mainParticiantName = mainParticiantName;
+    public PrivateChat(String mainParticipantName, String secondParticipantName) {
+        this.mainParticipantName = mainParticipantName;
         this.secondParticipantName = secondParticipantName;
     }
 
-    public String getMainParticiantName() {
-        return mainParticiantName;
+    public String getMainParticipantName() {
+        return mainParticipantName;
     }
 
     public String getSecondParticipantName() {
