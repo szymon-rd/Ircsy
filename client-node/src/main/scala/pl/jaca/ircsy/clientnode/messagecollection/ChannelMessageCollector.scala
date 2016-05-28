@@ -1,20 +1,15 @@
 package pl.jaca.ircsy.clientnode.messagecollection
 
-import akka.actor.Actor.Receive
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable}
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
-import akka.persistence.PersistentActor
-import org.scalatest.path
+import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ChannelMessageReceived, ChannelSubject, LeftChannel}
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
-import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ConnectionProxyPublisher, ServerDesc}
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection}
 import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollector.Stop
-import ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection, FindUserConnection}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.MessageRepositoryFactory
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{Observer, RegisterObserver, UnregisterObserver}
-import pl.jaca.ircsy.util.config.ConfigUtil.Configuration
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
 
 /**
   * @author Jaca777
@@ -34,7 +29,7 @@ class ChannelMessageCollector(serverDesc: ServerDesc, channelName: String, pubSu
   override def receive: Receive = lookingForProxy()
 
   def lookingForProxy(broadcasting: Cancellable): Receive = {
-    case ChannelConnectionFound(`channelName`, connection, proxy) if connection.serverDesc == serverDesc =>
+    case ChannelConnectionFound(`channelName`, connection, proxy) if connection.getServer == serverDesc =>
       log.debug(s"Channel connection found ($serverDesc channel $channelName), registering observer...")
       proxy ! RegisterObserver(observer)
       context become collecting(connection, proxy)

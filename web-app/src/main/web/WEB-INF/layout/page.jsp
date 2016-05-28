@@ -3,7 +3,7 @@
 <%@page session="true" %>
 <html>
 <head>
-    <title>Spittr</title>
+    <title>Ircsy</title>
 </head>
 <body>
     <div id="header">

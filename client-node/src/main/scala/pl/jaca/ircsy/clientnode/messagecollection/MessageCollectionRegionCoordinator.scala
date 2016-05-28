@@ -1,12 +1,7 @@
 package pl.jaca.ircsy.clientnode.messagecollection
 
-import java.security.MessageDigest
-
-import akka.actor.{ActorLogging, Actor}
-import akka.actor.Actor.Receive
-import akka.cluster.sharding.{ClusterSharding, ShardRegion}
-import akka.cluster.sharding.ShardRegion.{ShardId, EntityId}
-import pl.jaca.ircsy.clientnode.connection.{ServerDesc, ConnectionDesc}
+import akka.actor.{Actor, ActorLogging}
+import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.MessageRepositoryFactory
 import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterSharding
 

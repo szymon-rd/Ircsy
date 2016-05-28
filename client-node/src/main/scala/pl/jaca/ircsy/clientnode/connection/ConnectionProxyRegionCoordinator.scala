@@ -5,11 +5,12 @@ import java.security.MessageDigest
 import akka.actor._
 import akka.cluster.sharding.ShardCoordinator.LeastShardAllocationStrategy
 import akka.cluster.sharding.ShardRegion.{EntityId, ShardId}
-import akka.cluster.sharding.{ShardCoordinator, ShardRegion, ClusterSharding, ClusterShardingSettings}
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardCoordinator, ShardRegion}
 import akka.persistence.PersistentActor
+import pl.jaca.ircsy.chat.ConnectionDesc
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.Initialize
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{StopProxy, ShardIdLength, ForwardToProxy, StartProxy}
-import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ConnectionCmd, Stop, Start}
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{ForwardToProxy, ShardIdLength, StartProxy, StopProxy}
+import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ConnectionCmd, Start, Stop}
 import pl.jaca.ircsy.clientnode.sharding.{RegionAwareClusterSharding, RegionAwareClusterShardingImpl}
 
 /**

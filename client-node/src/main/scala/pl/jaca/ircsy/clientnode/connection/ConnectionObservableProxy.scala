@@ -2,6 +2,7 @@ package pl.jaca.ircsy.clientnode.connection
 
 import akka.actor.{ActorLogging, ActorRef}
 import akka.persistence.{AtLeastOnceDelivery, PersistentActor, Recovery, SnapshotOffer}
+import pl.jaca.ircsy.chat.ConnectionDesc
 import pl.jaca.ircsy.chat.messages.{ChannelMessage, PrivateMessage}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol
@@ -67,7 +68,7 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
     connectingResult.foreach {
       _ =>
         state = state.copy(running = true)
-        log.debug(s"Connected to server: ${connectionDesc.serverDesc}")
+        log.debug(s"Connected to server: ${connectionDesc.getServer}")
     }
     notifyResult(connectingResult, ConnectedToServer(state.connectionDesc), FailedToConnectToServer(state.connectionDesc))
     state.channels.foreach(joinChannel)

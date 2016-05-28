@@ -2,11 +2,9 @@ package pl.jaca.ircsy.clientnode.messagecollection
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable}
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
-import akka.persistence.PersistentActor
-import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ConnectionObservableProxy, ConnectionProxyPublisher}
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
-import ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection, FindUserConnection, UserConnectionFound}
-import pl.jaca.ircsy.clientnode.messagecollection.PrivateMessageCollector.Stop
+import pl.jaca.ircsy.chat.ConnectionDesc
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyPublisher.{FindUserConnection, UserConnectionFound}
+import pl.jaca.ircsy.clientnode.connection.{ConnectionObservableProxy, ConnectionProxyPublisher}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.MessageRepositoryFactory
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{ClassFilterSubject, Observer, RegisterObserver, UnregisterObserver}
 
@@ -26,7 +24,7 @@ class PrivateMessageCollector(connectionDesc: ConnectionDesc, pubSubMediator: Ac
   val observer = Observer(self, Set(ClassFilterSubject(classOf[PrivateMessageReceived], classOf[DisconnectedFromServer])))
 
   log.debug(s"Starting private message collector ($connectionDesc), subscribing to user topic ...")
-  pubSubMediator ! Subscribe(s"users-${connectionDesc.serverDesc}", self)
+  pubSubMediator ! Subscribe(s"users-${connectionDesc.getServer}", self)
 
   override def receive: Receive = lookingForProxy()
 
@@ -42,14 +40,14 @@ class PrivateMessageCollector(connectionDesc: ConnectionDesc, pubSubMediator: Ac
 
   def lookingForProxy(): Receive = {
     log.debug(s"Starting looking for proxy: ($connectionDesc)")
-    val broadcastMessage = Publish(s"users-${connectionDesc.serverDesc}", FindUserConnection(connectionDesc))
+    val broadcastMessage = Publish(s"users-${connectionDesc.getServer}", FindUserConnection(connectionDesc))
     val broadcasting = context.system.scheduler.schedule(Duration.Zero, broadcastInterval, pubSubMediator, broadcastMessage)
     lookingForProxy(broadcasting)
   }
 
   def collecting(proxy: ActorRef): Receive = {
     case PrivateMessageReceived(message) =>
-      repository.addPrivateMessage(connectionDesc.serverDesc, message)
+      repository.addPrivateMessage(connectionDesc.getServer, message)
     case DisconnectedFromServer(`connectionDesc`) =>
       context become lookingForProxy()
     case PrivateMessageCollector.Stop =>

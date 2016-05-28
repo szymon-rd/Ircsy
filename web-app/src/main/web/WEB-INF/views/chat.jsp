@@ -7,9 +7,9 @@
           href="<c:url value="/resources/chat.js" />"/>
 </head>
 <body>
-<div class="boardHeader"> <h2>Profile</h2> </div>
-<div class="profileData">
-    <h1>DUPA</h1>
-</div>
+    <div class="row">
+        <div class="col-sm-8">.col-sm-8</div>
+        <div class="col-sm-3">.col-sm-3</div>
+    </div>
 </body>
 </html>

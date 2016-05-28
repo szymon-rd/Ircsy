@@ -2,6 +2,7 @@ package pl.jaca.ircsy.clientnode.connection
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
+import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{JoinedChannel, LeftChannel, OnRegisterStateSubject, ProxyState}
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyPublisher._
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
@@ -22,8 +23,8 @@ class ConnectionProxyPublisher(connection: ConnectionDesc, proxy: ActorRef, pubS
   override def receive: Receive = {
     case ProxyState(_, connectionDesc, _, channels, _) =>
       context become observing(connectionDesc, channels)
-      pubSubMediator ! Subscribe(s"channels-${connectionDesc.serverDesc}", self)
-      pubSubMediator ! Subscribe(s"users-${connectionDesc.serverDesc}", self)
+      pubSubMediator ! Subscribe(s"channels-${connectionDesc.getServer}", self)
+      pubSubMediator ! Subscribe(s"users-${connectionDesc.getServer}", self)
   }
 
   def observing(connection: ConnectionDesc, channels: Set[String]): Receive = {
@@ -31,12 +32,12 @@ class ConnectionProxyPublisher(connection: ConnectionDesc, proxy: ActorRef, pubS
     case LeftChannel(channel) => context become observing(connection, channels - channel)
 
     case FindChannelConnection(desc, channel) =>
-      if (desc == connection.serverDesc && (channels contains channel))
+      if (desc == connection.getServer && (channels contains channel))
         pubSubMediator ! Publish(s"channels-$desc", ChannelConnectionFound(channel, connection, proxy))
 
     case FindUserConnection(desc) =>
       if(desc == connection)
-        pubSubMediator ! Publish(s"users-${desc.serverDesc}", UserConnectionFound(desc, proxy))
+        pubSubMediator ! Publish(s"users-${desc.getServer}", UserConnectionFound(desc, proxy))
 
     case Stop =>
       log.debug(s"Stopping connection proxy publisher ($connection)...")

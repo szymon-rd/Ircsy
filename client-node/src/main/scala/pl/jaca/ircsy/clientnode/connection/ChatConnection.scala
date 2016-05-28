@@ -1,7 +1,8 @@
 package pl.jaca.ircsy.clientnode.connection
 
 
-import pl.jaca.ircsy.chat.messages.{Notification, PrivateMessage, ChannelMessage}
+import pl.jaca.ircsy.chat.ConnectionDesc
+import pl.jaca.ircsy.chat.messages.{ChannelMessage, Notification, PrivateMessage}
 import rx.lang.scala.Observable
 
 import scala.concurrent.Future

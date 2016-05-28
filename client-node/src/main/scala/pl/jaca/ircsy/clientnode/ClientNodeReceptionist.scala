@@ -3,10 +3,11 @@ package pl.jaca.ircsy.clientnode
 import akka.actor.{Actor, ActorRef, Props}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.sharding.ClusterSharding
+import pl.jaca.ircsy.chat.ConnectionDesc
 import pl.jaca.ircsy.clientnode.ClientNodeReceptionist._
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ChannelMessageReceived, ConnectionCmd, PrivateMessageReceived}
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
-import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ConnectionProxyRegionCoordinator, ServerDesc}
 import pl.jaca.ircsy.clientnode.connection.irc.IrcConnectionFactory
 import pl.jaca.ircsy.clientnode.messagecollection.MessageCollectionRegionCoordinator
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol._

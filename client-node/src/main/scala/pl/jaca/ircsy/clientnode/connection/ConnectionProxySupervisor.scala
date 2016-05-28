@@ -4,6 +4,7 @@ import akka.actor.SupervisorStrategy.{Restart, Stop}
 import akka.actor._
 import akka.cluster.pubsub.DistributedPubSub
 import akka.util.Timeout
+import pl.jaca.ircsy.chat.ConnectionDesc
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.ConnectionCmd
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.Initialize
 

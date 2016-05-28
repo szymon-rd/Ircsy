@@ -13,13 +13,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 import org.springframework.web.servlet.view.tiles3.TilesConfigurer;
 import org.springframework.web.servlet.view.tiles3.TilesViewResolver;
 
+import javax.swing.*;
+
 /**
  * @author Jaca777
  *         Created 2016-05-02 at 16
  */
 @Configuration
 @EnableWebMvc
-@ComponentScan(basePackages = "pl.jaca.ircsy.webapp")
+@ComponentScan(basePackages = "pl.jaca.ircsy.webapp.controller")
 public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Override

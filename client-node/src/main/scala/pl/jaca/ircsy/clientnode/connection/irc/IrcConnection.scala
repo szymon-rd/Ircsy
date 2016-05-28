@@ -4,13 +4,13 @@ package pl.jaca.ircsy.clientnode.connection.irc
 import com.ircclouds.irc.api
 import com.ircclouds.irc.api.IRCApiImpl
 import com.ircclouds.irc.api.domain.IRCChannel
-import com.ircclouds.irc.api.state.IIRCState
+import pl.jaca.ircsy.chat.ConnectionDesc
 import pl.jaca.ircsy.chat.messages.{ChannelMessage, Notification, PrivateMessage}
-import pl.jaca.ircsy.clientnode.connection.{ChatConnection, ConnectionDesc}
-import rx.lang.scala.{Subject, Observable}
+import pl.jaca.ircsy.clientnode.connection.ChatConnection
+import rx.lang.scala.Subject
+
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.Try
+import scala.concurrent.{ExecutionContext, Future}
 
 
 /**

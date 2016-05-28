@@ -2,10 +2,10 @@ package pl.jaca.ircsy.clientnode.messagecollection
 
 import akka.actor.SupervisorStrategy.{Restart, Stop}
 import akka.actor._
-import akka.actor.Actor.Receive
-import pl.jaca.ircsy.clientnode.connection.ServerDesc
+import pl.jaca.ircsy.chat.ServerDesc
 import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollectorSupervisor.Initialize
 import pl.jaca.ircsy.clientnode.messagecollection.repository.MessageRepositoryFactory
+
 import scala.concurrent.duration._
 import scala.language.postfixOps
 

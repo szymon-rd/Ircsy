@@ -3,8 +3,8 @@ package pl.jaca.ircsy.clientnode.messagecollection.cassandra
 import java.net.InetAddress
 
 import com.datastax.driver.core.{Cluster, ConsistencyLevel, RegularStatement, SimpleStatement}
-import pl.jaca.ircsy.chat.messages.{PrivateMessage, ChannelMessage}
-import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ServerDesc}
+import pl.jaca.ircsy.chat.ServerDesc
+import pl.jaca.ircsy.chat.messages.{ChannelMessage, PrivateMessage}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.MessageRepository
 
 import scala.collection.JavaConverters._
