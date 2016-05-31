@@ -13,6 +13,7 @@ public interface IrcsyUser {
     String getName();
     Observable<ChannelMessage> getMessages();
     Observable<Notification> getNotifications();
+    UserMessageRepository getrMessageRepository();
     void joinChannel(ServerDesc server, String channelName);
     void joinServer(ServerDesc server);
     void sendChannelMessage(ServerDesc server, String channel, String message);

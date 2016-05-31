@@ -17,7 +17,5 @@ class DistributedChatService extends ChatService {
 
   override def createUser(name: String): IrcsyUser = ???
 
-  override def getUserMessageRepository(userName: String): UserMessageRepository = ???
-
   override def getChannelMessageRepository(server: ServerDesc, channelName: String): ChannelMessageRepository = ???
 }
