@@ -4,6 +4,7 @@ import akka.actor.{ActorSystem, ExtendedActorSystem, Props}
 import akka.testkit.{TestKit, TestKitBase, TestKitExtension, TestProbe}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest._
+import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.Initialize
 import rx.lang.scala.Observable
@@ -18,7 +19,7 @@ class ConnectionProxySupervisorSpec extends {
   implicit val system = ActorSystem("ConnectionProxySupervisorSpec")
 } with WordSpec with TestKitBase with Matchers with OneInstancePerTest with MockFactory {
 
-  val testDesc: ConnectionDesc = ConnectionDesc(ServerDesc("foo", 42), "bar")
+  val testDesc: ConnectionDesc = new ConnectionDesc(new ServerDesc("foo", 42), "bar")
 
   "ConnectionProxySupervisor" should {
     "start a proxy" in {

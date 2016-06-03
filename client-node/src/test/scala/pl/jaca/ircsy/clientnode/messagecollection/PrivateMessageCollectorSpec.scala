@@ -7,12 +7,11 @@ import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 import akka.testkit.{TestKitBase, TestProbe}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
-import pl.jaca.ircsy.chat.PrivateChat
+import pl.jaca.ircsy.chat.{ConnectionDesc, PrivateChat, ServerDesc}
 import pl.jaca.ircsy.chat.messages.{ChatUser, PrivateMessage}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
-import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ConnectionProxyPublisher, ServerDesc}
-import ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection, FindUserConnection, UserConnectionFound}
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyPublisher
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyPublisher.{FindUserConnection, UserConnectionFound}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.{MessageRepository, MessageRepositoryFactory}
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{ClassFilterSubject, Observer, RegisterObserver}
 
@@ -28,8 +27,8 @@ class PrivateMessageCollectorSpec extends {
   implicit val system = ActorSystem("PrivateMessageCollectorSpec")
 } with WordSpec with TestKitBase with Matchers with MockFactory {
 
-  val serverDesc = ServerDesc("foo", 42)
-  val connectionDesc = ConnectionDesc(serverDesc, "user")
+  val serverDesc = new ServerDesc("foo", 42)
+  val connectionDesc = new ConnectionDesc(serverDesc, "user")
 
   "PrivateMessageCollector" should {
     "subscribe to users topic" in {

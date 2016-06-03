@@ -1,15 +1,14 @@
 package pl.jaca.ircsy.clientnode.messagecollection
 
-import akka.actor.{ActorRef, ExtendedActorSystem, Props, ActorSystem}
+import akka.actor.{ActorRef, ActorSystem, ExtendedActorSystem, Props}
 import akka.cluster.sharding.ShardCoordinator.ShardAllocationStrategy
 import akka.cluster.sharding.ShardRegion.MessageExtractor
-import akka.cluster.sharding.{ShardRegion, ClusterShardingSettings, ClusterSharding}
-import akka.testkit.{TestKitBase, TestProbe, TestActorRef, TestKit}
-
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
+import akka.testkit.{TestActorRef, TestKit, TestKitBase, TestProbe}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec, WordSpecLike}
+import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.Start
-import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterSharding
 
 /**
@@ -21,8 +20,8 @@ class MessageCollectionRegionCoordinatorSpec extends {
 } with WordSpec with TestKitBase with Matchers with MockFactory {
 
 
-  val serverDesc = ServerDesc("foo", 42)
-  val connectionDesc = ConnectionDesc(serverDesc, "nick")
+  val serverDesc = new ServerDesc("foo", 42)
+  val connectionDesc = new ConnectionDesc(serverDesc, "nick")
 
   class MockableClusterSharding extends ClusterSharding(system.asInstanceOf[ExtendedActorSystem]) {
     override def start(typeName: String,

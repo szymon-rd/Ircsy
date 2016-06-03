@@ -5,19 +5,20 @@ import java.util.concurrent.ThreadFactory
 import akka.actor.ActorSystem.Settings
 import akka.actor._
 import akka.cluster.sharding.ShardCoordinator.ShardAllocationStrategy
-import akka.cluster.sharding.ShardRegion.{MessageExtractor, ExtractShardId, ExtractEntityId}
-import akka.cluster.sharding.{ShardRegion, ClusterShardingSettings, ClusterSharding}
+import akka.cluster.sharding.ShardRegion.{ExtractEntityId, ExtractShardId, MessageExtractor}
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.dispatch.{Dispatchers, Mailboxes}
-import akka.event.{LoggingFilter, LoggingAdapter, EventStream}
+import akka.event.{EventStream, LoggingAdapter, LoggingFilter}
 import akka.testkit._
 import org.scalamock.scalatest.MockFactory
 import org.scalatest._
+import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{Start, Stop}
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{ForwardToProxy, StartProxy, StopProxy}
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxySupervisor.Initialize
 import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterSharding
 
-import scala.concurrent.{Future, ExecutionContextExecutor}
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -31,7 +32,7 @@ class ConnectionProxyRegionCoordinatorSpec extends {
 
 
 
-  val testDesc: ConnectionDesc = ConnectionDesc(ServerDesc("foo", 42), "bar")
+  val testDesc: ConnectionDesc = new ConnectionDesc(new ServerDesc("foo", 42), "bar")
   val mediator = TestProbe().ref
 
   "ConnectionProxyRegionCoordinator" should {

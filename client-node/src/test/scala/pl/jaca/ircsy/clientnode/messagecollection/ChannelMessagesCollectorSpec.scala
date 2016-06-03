@@ -2,20 +2,19 @@ package pl.jaca.ircsy.clientnode.messagecollection
 
 import java.time.LocalDate
 
-import akka.actor.{ActorSystem, Props, Terminated}
+import akka.actor.{ActorSystem, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
-import akka.testkit.{TestActorRef, TestKit, TestKitBase, TestProbe}
-import org.scalamock.matchers.MockParameter
+import akka.testkit.{TestKitBase, TestProbe}
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{Matchers, WordSpec, WordSpecLike}
+import org.scalatest.{Matchers, WordSpec}
+import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.chat.messages.{ChannelMessage, ChatUser}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ChannelMessageReceived, ChannelSubject, LeftChannel}
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
-import pl.jaca.ircsy.clientnode.connection.{ConnectionDesc, ConnectionObservableProxy, ConnectionProxyPublisher, ServerDesc}
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyPublisher
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection}
 import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollector.Stop
-import ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection, FindUserConnection}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.{MessageRepository, MessageRepositoryFactory}
-import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{ClassFilterSubject, Observer, RegisterObserver, UnregisterObserver}
+import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{Observer, RegisterObserver, UnregisterObserver}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -28,8 +27,8 @@ class ChannelMessagesCollectorSpec extends {
   implicit val system = ActorSystem("MessagesCollectorSpec")
 } with WordSpec with TestKitBase with Matchers with MockFactory {
 
-  val serverDesc = ServerDesc("foo", 42)
-  val connection = ConnectionDesc(serverDesc, "bar")
+  val serverDesc = new ServerDesc("foo", 42)
+  val connection = new ConnectionDesc(serverDesc, "bar")
   val testUser = new ChatUser("foo", "bar", "foo")
 
   "ChannelMessagesCollector" should {

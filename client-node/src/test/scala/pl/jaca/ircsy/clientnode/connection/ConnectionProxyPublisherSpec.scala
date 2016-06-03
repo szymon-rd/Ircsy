@@ -6,6 +6,7 @@ import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 import akka.testkit.{TestKitBase, TestProbe}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
+import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.ProxyState
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection, FindUserConnection, UserConnectionFound}
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
@@ -24,8 +25,8 @@ class ConnectionProxyPublisherSpec extends {
 
   class MockablePubSub extends DistributedPubSub(system.asInstanceOf[ExtendedActorSystem])
 
-  val serverDesc = ServerDesc("foo", 42)
-  val testDesc: ConnectionDesc = ConnectionDesc(serverDesc, "bar")
+  val serverDesc = new ServerDesc("foo", 42)
+  val testDesc: ConnectionDesc = new ConnectionDesc(serverDesc, "bar")
   val testState = ProxyState(true, testDesc, mock[ChatConnectionFactory], Set("foo", "bar"), Set.empty)
 
   "ConnectionProxyPublisher" should {
@@ -68,7 +69,7 @@ class ConnectionProxyPublisherSpec extends {
       val publisher = system.actorOf(Props(new ConnectionProxyPublisher(testDesc, proxy.ref, mediator.ref)))
       proxy.receiveOne(300 millis)
       proxy.reply(testState)
-      publisher ! FindUserConnection(testDesc.copy(username = "miras"))
+      publisher ! FindUserConnection(new ConnectionDesc(serverDesc, "miras"))
       mediator.receiveOne(300 millis)
       mediator.receiveOne(300 millis)
       mediator.expectNoMsg()

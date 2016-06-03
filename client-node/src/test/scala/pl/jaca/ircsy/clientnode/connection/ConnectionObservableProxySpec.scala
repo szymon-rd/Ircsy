@@ -1,9 +1,10 @@
 package pl.jaca.ircsy.clientnode.connection
 
 import akka.actor.{ActorSystem, Props}
-import akka.testkit.{TestKitBase, TestKit}
+import akka.testkit.{TestKit, TestKitBase}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest._
+import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{ClassFilterSubject, Observer, RegisterObserver}
 import rx.lang.scala.Observable
@@ -24,7 +25,7 @@ class ConnectionObservableProxySpec extends {
 
 
 
-  val testDesc: ConnectionDesc = ConnectionDesc(ServerDesc("foo", 42), "bar")
+  val testDesc: ConnectionDesc = new ConnectionDesc(new ServerDesc("foo", 42), "bar")
 
   "ConnectionObservableProxy" should {
     "join channel" in {
