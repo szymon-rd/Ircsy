@@ -3,6 +3,7 @@ package pl.jaca.ircsy.service;
 import pl.jaca.ircsy.chat.ServerDesc;
 import pl.jaca.ircsy.chat.messages.ChannelMessage;
 import pl.jaca.ircsy.chat.messages.Notification;
+import pl.jaca.ircsy.chat.messages.PrivateMessage;
 import rx.Observable;
 
 /**
@@ -12,10 +13,10 @@ import rx.Observable;
 public interface IrcsyUser {
     String getName();
     Observable<ChannelMessage> getMessages();
+    Observable<PrivateMessage> getPrivateMessages();
     Observable<Notification> getNotifications();
-    UserMessageRepository getrMessageRepository();
+    UserMessageRepository getMessageRepository();
     void joinChannel(ServerDesc server, String channelName);
-    void joinServer(ServerDesc server);
     void sendChannelMessage(ServerDesc server, String channel, String message);
     void sendPrivateMessage(ServerDesc server, String destUserName, String message);
 }

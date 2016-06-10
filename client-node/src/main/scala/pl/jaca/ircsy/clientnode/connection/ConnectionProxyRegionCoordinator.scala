@@ -68,11 +68,13 @@ class ConnectionProxyRegionCoordinator(sharding: RegionAwareClusterSharding, con
 object ConnectionProxyRegionCoordinator {
   private val ShardIdLength = 3
 
-  case class StartProxy(desc: ConnectionDesc)
+  abstract class ProxyCoordinatorCmd
 
-  case class StopProxy(desc: ConnectionDesc)
+  case class StartProxy(desc: ConnectionDesc) extends ProxyCoordinatorCmd
 
-  case class ForwardToProxy(desc: ConnectionDesc, cmd: Any)
+  case class StopProxy(desc: ConnectionDesc) extends ProxyCoordinatorCmd
+
+  private[clientnode] case class ForwardToProxy(desc: ConnectionDesc, cmd: Any)
 
   object Stop
 

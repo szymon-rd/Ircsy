@@ -31,7 +31,7 @@ class ClientNodeProxy extends Actor {
           clientNodes += member
           context become memberProxy(member, messagesQueue)
         }
-      case ForwardToNode(msg) => context become awaitingProxy(messagesQueue.enqueue(msg))
+      case msg => context become awaitingProxy(messagesQueue.enqueue(msg))
     } else memberProxy(clientNodes.head, messagesQueue)
   }
 
@@ -56,12 +56,7 @@ class ClientNodeProxy extends Actor {
       if (addedMember.hasRole("client-node"))
         clientNodes += member
 
-    case ForwardToNode(msg) =>
+    case msg =>
       receptionist ! msg
   }
-}
-
-object ClientNodeProxy {
-  case class ForwardToNode(msg: Any)
-
 }

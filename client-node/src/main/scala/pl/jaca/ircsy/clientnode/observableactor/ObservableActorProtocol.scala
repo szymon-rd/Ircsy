@@ -9,7 +9,10 @@ import akka.actor.ActorRef
 object ObservableActorProtocol {
   trait ObservableCmd
 
-  case class Observer(ref: ActorRef, subjects: Set[ObserverSubject])
+  case class Observer(ref: ActorRef, subjects: Set[ObserverSubject]) {
+    def isInterestedIn(notification: Any): Boolean =
+      subjects.exists(_ isInterestedIn notification)
+  }
 
   abstract class ObserverSubject {
     def isInterestedIn(notification: Any): Boolean

@@ -3,7 +3,7 @@ package pl.jaca.ircsy.clientnode.connection
 import akka.actor.{ActorLogging, ActorRef}
 import akka.persistence.{AtLeastOnceDelivery, PersistentActor, Recovery, SnapshotOffer}
 import pl.jaca.ircsy.chat.ConnectionDesc
-import pl.jaca.ircsy.chat.messages.{ChannelMessage, PrivateMessage}
+import pl.jaca.ircsy.chat.messages.{ChannelMessage, Notification, PrivateMessage}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol._
@@ -35,8 +35,6 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
     case UnregisterObserver(observer) => unregisterObserver(observer)
     case JoinChannel(channel) => joinChannel(channel)
   }
-
-
 
   private def setState(state: ProxyState) {
     if (state.running) connectToServer()
@@ -138,7 +136,11 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
       .privateMessages
       .map(PrivateMessageReceived)
 
-    (channelMessageNotifications merge privateMessageNotifications)
+    val notificationNotifications = connection
+      .notifications
+      .map(NotificationReceived)
+
+    (channelMessageNotifications merge privateMessageNotifications merge notificationNotifications)
       .foreach(notifyObservers)
   }
 
@@ -150,11 +152,10 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
     }
   }
 
-  private def notifyObservers(msg: Any) =
-    state.observers
-      .filter(_.subjects.exists(_ isInterestedIn msg))
-      .map(_.ref)
-      .foreach(_ ! msg)
+  private def notifyObservers(msg: Any) = {
+    val interestedObservers = state.observers.filter(_ isInterestedIn msg)
+    interestedObservers.foreach(_.ref ! msg)
+  }
 
 }
 
@@ -210,5 +211,7 @@ object ConnectionObservableProxy {
   case class ChannelMessageReceived(channelMessage: ChannelMessage)
 
   case class PrivateMessageReceived(privateMessage: PrivateMessage)
+
+  case class NotificationReceived(notification: Notification)
 
 }
