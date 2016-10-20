@@ -4,7 +4,7 @@ import akka.actor.Actor.Receive
 import akka.actor.{Actor, ActorRef}
 import akka.cluster.{Cluster, ClusterEvent, Member}
 import akka.cluster.ClusterEvent.{MemberRemoved, MemberUp}
-import pl.jaca.ircsy.service.distributed.ClientNodeProxy.ForwardToNode
+import pl.jaca.ircsy.service.distributed.ClientNodeProxy.ForwardToClientNode
 
 import scala.collection.immutable.Queue
 import scala.concurrent.{Await, Future}
@@ -56,7 +56,11 @@ class ClientNodeProxy extends Actor {
       if (addedMember.hasRole("client-node"))
         clientNodes += member
 
-    case msg =>
+    case ForwardToClientNode(msg) =>
       receptionist ! msg
   }
+}
+
+object ClientNodeProxy {
+  case class ForwardToClientNode(msg: Any)
 }

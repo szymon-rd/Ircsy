@@ -46,7 +46,7 @@ object ClientNodeReceptionist {
   val UserObserverSubject = ClassFilterSubject(classOf[ChannelMessageReceived], classOf[PrivateMessageReceived], classOf[NotificationReceived])
 
   case class StartConnection(connection: ConnectionDesc)
-  private[clientnode] case class RunConnectionCommand(connection: ConnectionDesc, cmd: Any)
+  case class RunConnectionCommand private[ClientNodeReceptionist] (connection: ConnectionDesc, cmd: Any)
   object RunConnectionCommand {
     def apply(connection: ConnectionDesc, connectionCmd: ConnectionCmd) = new RunConnectionCommand(connection, connectionCmd)
     def apply(connection: ConnectionDesc, observableCmd: ObservableCmd) = new RunConnectionCommand(connection, observableCmd)

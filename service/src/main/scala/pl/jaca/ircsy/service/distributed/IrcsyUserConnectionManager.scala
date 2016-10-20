@@ -49,8 +49,6 @@ class IrcsyUserConnectionManager(nickname: String,
 
     case failure @ FailedToConnectToServer(connectionDesc) =>
       notifications.onNext(new FailedToConnectToServerNotification(connectionDesc.getServer, connectionDesc.getNickname, failure.getCause, LocalDate.now()))
-
-    case
   }
 
   def connectToServer(serverDesc: ServerDesc) {

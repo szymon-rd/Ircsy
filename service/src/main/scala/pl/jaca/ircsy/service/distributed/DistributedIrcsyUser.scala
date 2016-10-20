@@ -6,7 +6,7 @@ import pl.jaca.ircsy.chat.messages.{ChannelMessage, Notification, PrivateMessage
 import pl.jaca.ircsy.clientnode.ClientNodeReceptionist.RunConnectionCommand
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{JoinChannel, SendChannelMessage, SendPrivateMessage}
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
-import pl.jaca.ircsy.service.distributed.ClientNodeProxy.ForwardToNode
+import pl.jaca.ircsy.service.distributed.ClientNodeProxy.ForwardToClientNode
 import pl.jaca.ircsy.service.{IrcsyUser, UserMessageRepository, UserMessageRepositoryFactory}
 import rx.Observable
 import rx.lang.scala.Subject
@@ -27,20 +27,20 @@ class DistributedIrcsyUser(name: String, system: ActorSystem, clientNodeProxy: A
 
   override def getName: String = name
 
-  override def getMessages: Observable[ChannelMessage] = channelMessages.asJavaObservable[ChannelMessage]
+  override def getMessages: Observable[ChannelMessage] = channelMessages.asJavaObservable.asInstanceOf[Observable[ChannelMessage]]
 
-  override def getNotifications: Observable[Notification] = notifications.asJavaObservable[Notification]
+  override def getNotifications: Observable[Notification] = notifications.asJavaObservable.asInstanceOf[Observable[Notification]]
 
   override def joinChannel(server: ServerDesc, channelName: String): Unit =
-    clientNodeProxy ! RunConnectionCommand(ForwardToProxy(new ConnectionDesc(server, name), JoinChannel(channelName)))
+    clientNodeProxy ! ForwardToClientNode(RunConnectionCommand(new ConnectionDesc(server, name), JoinChannel(channelName)))
 
   override def sendChannelMessage(server: ServerDesc, channel: String, message: String): Unit =
-    clientNodeProxy ! ForwardToNode(ForwardToProxy(new ConnectionDesc(server, name), SendChannelMessage(channel, message)))
+    clientNodeProxy ! ForwardToClientNode(RunConnectionCommand(new ConnectionDesc(server, name), SendChannelMessage(channel, message)))
 
   override def sendPrivateMessage(server: ServerDesc, destUserName: String, message: String): Unit =
-    clientNodeProxy ! ForwardToNode(ForwardToProxy(new ConnectionDesc(server, name), SendPrivateMessage(destUserName, message)))
+    clientNodeProxy ! ForwardToClientNode(RunConnectionCommand(new ConnectionDesc(server, name), SendPrivateMessage(destUserName, message)))
 
   override def getMessageRepository: UserMessageRepository = messageRepository
 
-  override def getPrivateMessages: Observable[PrivateMessage] = privateMessages.asJavaObservable[PrivateMessage]
+  override def getPrivateMessages: Observable[PrivateMessage] = privateMessages.asJavaObservable.asInstanceOf[Observable[PrivateMessage]]
 }
