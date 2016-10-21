@@ -111,7 +111,6 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
     result.foreach {
       _ => state = state.copy(channels = state.channels + name)
     }
-    println(result)
     notifyResult(result, JoinedChannel(name), FailedToJoinChannel(name))
   }
 

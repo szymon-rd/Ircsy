@@ -74,7 +74,7 @@ class ChannelMessagesCollectorSpec extends {
       val repository = mock[MessageRepository]
       val factory = mock[MessageRepositoryFactory]
       (factory.newRepository _).expects().returns(repository)
-      val message = new ChannelMessage("bar", LocalDate.now(), testUser, "message")
+      val message = new ChannelMessage(serverDesc, "bar", LocalDate.now(), testUser, "message")
       (repository.addChannelMessage _).expects(serverDesc, message)
 
       val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))

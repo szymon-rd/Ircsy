@@ -49,7 +49,7 @@ object ClientNodeReceptionist {
   case class RunConnectionCommand private[ClientNodeReceptionist] (connection: ConnectionDesc, cmd: Any)
   object RunConnectionCommand {
     def apply(connection: ConnectionDesc, connectionCmd: ConnectionCmd) = new RunConnectionCommand(connection, connectionCmd)
-    def apply(connection: ConnectionDesc, observableCmd: ObservableCmd) = new RunConnectionCommand(connection, observableCmd)
+    def apply(connection: ConnectionDesc, observableCmd: ObserverCmd) = new RunConnectionCommand(connection, observableCmd)
   }
   case class RunCommand(cmd: ProxyCoordinatorCmd)
   case class ObserveUser(connectionDesc: ConnectionDesc, observer: ActorRef)

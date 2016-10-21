@@ -1,5 +1,7 @@
 package pl.jaca.ircsy.chat.messages;
 
+import pl.jaca.ircsy.chat.ServerDesc;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 
@@ -9,16 +11,22 @@ import java.time.LocalDate;
  */
 public class ChannelMessage implements Serializable {
 
+    private ServerDesc serverDesc;
     private String channel;
     private LocalDate time;
     private ChatUser author;
     private String text;
 
-    public ChannelMessage(String channel, LocalDate time, ChatUser author, String text) {
+    public ChannelMessage(ServerDesc serverDesc, String channel, LocalDate time, ChatUser author, String text) {
+        this.serverDesc = serverDesc;
         this.channel = channel;
         this.time = time;
         this.author = author;
         this.text = text;
+    }
+
+    public ServerDesc getServerDesc() {
+        return serverDesc;
     }
 
     public String getChannel() {

@@ -1,5 +1,6 @@
 package pl.jaca.ircsy.chat.messages.notification;
 
+import pl.jaca.ircsy.chat.ServerDesc;
 import pl.jaca.ircsy.chat.messages.Notification;
 
 import java.time.LocalDate;
@@ -10,14 +11,21 @@ import java.time.LocalDate;
  */
 public class ErrorNotification implements Notification {
 
+    private ServerDesc serverDesc;
     private LocalDate time;
     private String error;
 
-    public ErrorNotification(LocalDate time, String error) {
+    public ErrorNotification(ServerDesc serverDesc, LocalDate time, String error) {
+        this.serverDesc = serverDesc;
         this.time = time;
         this.error = error;
     }
 
+    public ServerDesc getServerDesc() {
+        return serverDesc;
+    }
+
+    @Override
     public LocalDate getTime() {
         return time;
     }
