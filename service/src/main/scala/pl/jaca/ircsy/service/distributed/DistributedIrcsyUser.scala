@@ -1,5 +1,8 @@
 package pl.jaca.ircsy.service.distributed
 
+import java.util
+import java.util.concurrent.CompletableFuture
+
 import akka.actor.{ActorRef, ActorSystem, Props}
 import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.chat.messages.{ChannelMessage, Notification, PrivateMessage}
@@ -27,20 +30,28 @@ class DistributedIrcsyUser(name: String, system: ActorSystem, clientNodeProxy: A
 
   override def getName: String = name
 
+  override def getServers: CompletableFuture[util.List[ServerDesc]] = ???
+
+  override def getChannels(server: ServerDesc):  CompletableFuture[util.List[String]] = ???
+
+  override def getPrivateMessages: Observable[PrivateMessage] = privateMessages.asJavaObservable.asInstanceOf[Observable[PrivateMessage]]
+
   override def getMessages: Observable[ChannelMessage] = channelMessages.asJavaObservable.asInstanceOf[Observable[ChannelMessage]]
 
   override def getNotifications: Observable[Notification] = notifications.asJavaObservable.asInstanceOf[Observable[Notification]]
 
   override def joinChannel(server: ServerDesc, channelName: String): Unit =
-    clientNodeProxy ! ForwardToClientNode(RunConnectionCommand(new ConnectionDesc(server, name), JoinChannel(channelName)))
+    connectionManager ! IrcsyUserConnectionManager.JoinChannel(server, channelName)
+
+  override def leaveChannel(server: ServerDesc, channelName: String): Unit =
+    connectionManager ! IrcsyUserConnectionManager.LeaveChannel(server, channelName)
 
   override def sendChannelMessage(server: ServerDesc, channel: String, message: String): Unit =
-    clientNodeProxy ! ForwardToClientNode(RunConnectionCommand(new ConnectionDesc(server, name), SendChannelMessage(channel, message)))
+    connectionManager ! IrcsyUserConnectionManager.SendChannelMessage(server, channel, message)
 
   override def sendPrivateMessage(server: ServerDesc, destUserName: String, message: String): Unit =
-    clientNodeProxy ! ForwardToClientNode(RunConnectionCommand(new ConnectionDesc(server, name), SendPrivateMessage(destUserName, message)))
+    connectionManager ! IrcsyUserConnectionManager.SendPrivateMessage(server, destUserName, message)
 
   override def getMessageRepository: UserMessageRepository = messageRepository
 
-  override def getPrivateMessages: Observable[PrivateMessage] = privateMessages.asJavaObservable.asInstanceOf[Observable[PrivateMessage]]
 }
