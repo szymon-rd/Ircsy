@@ -67,11 +67,11 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
       _ =>
         state = state.copy(running = true)
         log.debug(s"Connected to server: ${connectionDesc.getServer}")
+        startNotifyingMessages()
+        saveSnapshot(state)
+        state.channels.foreach(joinChannel)
     }
     notifyResult(connectingResult, ConnectedToServer(state.connectionDesc), FailedToConnectToServer(state.connectionDesc))
-    state.channels.foreach(joinChannel)
-    startNotifyingMessages()
-    saveSnapshot(state)
   }
 
   private def connectToServer(): Try[Unit] = Try {

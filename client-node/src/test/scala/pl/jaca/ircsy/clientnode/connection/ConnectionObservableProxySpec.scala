@@ -9,9 +9,10 @@ import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{ClassFilterSubject, Observer, RegisterObserver}
 import rx.lang.scala.Observable
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import scala.util.Success
 
 
 /**
@@ -32,9 +33,11 @@ class ConnectionObservableProxySpec extends {
       val factory = mock[ChatConnectionFactory]
       val connection = mock[ChatConnection]
       (factory.newConnection _).expects(*).returns(connection)
-      (connection.joinChannel _).expects("channel")
+      (connection.joinChannel _).expects("channel").returns(Future.successful())
       (connection.channelMessages _).expects().returns(Observable.empty)
       (connection.privateMessages _).expects().returns(Observable.empty)
+      (connection.notifications _).expects().returns(Observable.empty)
+      (connection.connectTo _).expects(*, *).returns(Future.successful())
       val proxy = system.actorOf(Props(new ConnectionObservableProxy(testDesc, factory)))
       proxy ! Start
       proxy ! JoinChannel("channel")
@@ -48,6 +51,7 @@ class ConnectionObservableProxySpec extends {
       (factory.newConnection _).expects(*).returns(connection)
       (connection.channelMessages _).expects().returns(Observable.empty)
       (connection.privateMessages _).expects().returns(Observable.empty)
+      (connection.notifications _).expects().returns(Observable.empty)
       (connection.connectTo _).expects(*, *)
       (connection.joinChannel _).expects(*)
       val proxy = system.actorOf(Props(new ConnectionObservableProxy(testDesc, factory)))
@@ -64,6 +68,7 @@ class ConnectionObservableProxySpec extends {
       (connection.connectTo _).expects(*, *)
       (connection.channelMessages _).expects().returns(Observable.empty)
       (connection.privateMessages _).expects().returns(Observable.empty)
+      (connection.notifications _).expects().returns(Observable.empty)
       (connection.joinChannel _).expects(*).throws(new RuntimeException())
       val proxy = system.actorOf(Props(new ConnectionObservableProxy(testDesc, factory)))
       proxy ! RegisterObserver(Observer(testActor, Set(ClassFilterSubject(classOf[JoinedChannel], classOf[FailedToJoinChannel]))))
