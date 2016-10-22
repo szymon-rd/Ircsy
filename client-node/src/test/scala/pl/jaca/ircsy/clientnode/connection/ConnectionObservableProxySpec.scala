@@ -58,7 +58,7 @@ class ConnectionObservableProxySpec extends {
       proxy ! RegisterObserver(Observer(testActor, Set(ClassFilterSubject(classOf[JoinedChannel], classOf[FailedToJoinChannel]))))
       proxy ! Start
       proxy ! JoinChannel("channel")
-      expectMsg(JoinedChannel("channel"))
+      expectMsg(JoinedChannel(testDesc.getServer, "channel"))
     }
 
     "notify observers when failed to join channel" in {
@@ -74,7 +74,7 @@ class ConnectionObservableProxySpec extends {
       proxy ! RegisterObserver(Observer(testActor, Set(ClassFilterSubject(classOf[JoinedChannel], classOf[FailedToJoinChannel]))))
       proxy ! Start
       proxy ! JoinChannel("channel")
-      expectMsg(FailedToJoinChannel("channel"))
+      expectMsg(FailedToJoinChannel(testDesc.getServer, "channel"))
     }
   }
 }

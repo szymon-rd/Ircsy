@@ -6,8 +6,7 @@ import pl.jaca.ircsy.chat.messages.Notification;
 import pl.jaca.ircsy.chat.messages.PrivateMessage;
 import rx.Observable;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.Set;
 
 /**
  * @author Jaca777
@@ -19,8 +18,8 @@ public interface IrcsyUser {
     Observable<PrivateMessage> getPrivateMessages();
     Observable<Notification> getNotifications();
     UserMessageRepository getMessageRepository();
-    CompletableFuture<List<ServerDesc>> getServers();
-    CompletableFuture<List<String>> getChannels(ServerDesc server);
+    Set<ServerDesc> getServers();
+    Set<String> getChannels(ServerDesc server);
     void joinChannel(ServerDesc server, String channelName);
     void leaveChannel(ServerDesc server, String channelName);
     void sendChannelMessage(ServerDesc server, String channel, String message);

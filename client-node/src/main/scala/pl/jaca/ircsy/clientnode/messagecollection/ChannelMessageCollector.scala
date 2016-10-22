@@ -2,12 +2,13 @@ package pl.jaca.ircsy.clientnode.messagecollection
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable}
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
+import pl.jaca.ircsy.chat.messages.ChannelMessage
 import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
-import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ChannelMessageReceived, ChannelSubject, LeftChannel}
+import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ChannelMessageReceived, LeftChannel}
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection}
-import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollector.Stop
+import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollector.{ChannelMessageCollectorSubject, Stop}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.MessageRepositoryFactory
-import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{Observer, RegisterObserver, UnregisterObserver}
+import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{Observer, ObserverSubject, RegisterObserver, UnregisterObserver}
 
 import scala.concurrent.duration.Duration
 
@@ -17,11 +18,12 @@ import scala.concurrent.duration.Duration
   */
 class ChannelMessageCollector(serverDesc: ServerDesc, channelName: String, pubSubMediator: ActorRef, repositoryFactory: MessageRepositoryFactory) extends Actor with ActorLogging {
 
+
   implicit val executionContext = context.dispatcher
   val config = context.system.settings.config
   val broadcastInterval = Duration.fromNanos(config.getDuration("app.collector.broadcast-interval").toNanos)
   val repository = repositoryFactory.newRepository()
-  val observer = Observer(self, Set(ChannelSubject(channelName)))
+  val observer = Observer(self, Set(ChannelMessageCollectorSubject(channelName)))
 
   log.debug(s"Starting channel message collector ($serverDesc channel $channelName), subscribing to channel topic...")
   pubSubMediator ! Subscribe(s"channels-$serverDesc", self)
@@ -62,6 +64,13 @@ class ChannelMessageCollector(serverDesc: ServerDesc, channelName: String, pubSu
 object ChannelMessageCollector {
 
   object Stop
+
+  case class ChannelMessageCollectorSubject(channelName: String) extends ObserverSubject {
+    override def isInterestedIn(notification: Any): Boolean = notification match {
+      case ChannelMessageReceived(msg: ChannelMessage) if msg.getChannel == channelName => true
+      case LeftChannel(_, _) => true
+    }
+  }
 
 }
 

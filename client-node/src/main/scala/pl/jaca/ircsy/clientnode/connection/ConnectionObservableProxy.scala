@@ -2,7 +2,7 @@ package pl.jaca.ircsy.clientnode.connection
 
 import akka.actor.{ActorLogging, ActorRef}
 import akka.persistence.{AtLeastOnceDelivery, PersistentActor, Recovery, SnapshotOffer}
-import pl.jaca.ircsy.chat.ConnectionDesc
+import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.chat.messages.{ChannelMessage, Notification, PrivateMessage}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol
@@ -111,7 +111,7 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
     result.foreach {
       _ => state = state.copy(channels = state.channels + name)
     }
-    notifyResult(result, JoinedChannel(name), FailedToJoinChannel(name))
+    notifyResult(result, JoinedChannel(connectionDesc.getServer, name), FailedToJoinChannel(connectionDesc.getServer,name))
   }
 
   private def leaveChannel(name: String) {
@@ -123,7 +123,7 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
         state = state.copy(channels = state.channels - name)
         saveSnapshot(state) // We don't want it to join and leave every channel.
     }
-    notifyResult(result, LeftChannel(name), FailedToLeaveChannel(name))
+    notifyResult(result, LeftChannel(connectionDesc.getServer,name), FailedToLeaveChannel(connectionDesc.getServer,name))
   }
 
   private def startNotifyingMessages() = {
@@ -160,7 +160,9 @@ class ConnectionObservableProxy(connectionDesc: ConnectionDesc, connectionFactor
 
 object ConnectionObservableProxy {
 
-  abstract class FailureNotification {
+  trait ConnectionNotification
+
+  abstract class FailureNotification extends ConnectionNotification{
     private[ConnectionObservableProxy] var cause: Throwable = null
 
     def getCause = cause
@@ -168,12 +170,7 @@ object ConnectionObservableProxy {
 
   case class ProxyState(running: Boolean, connectionDesc: ConnectionDesc, connectionFactory: ChatConnectionFactory, channels: Set[String], observers: Set[Observer]) extends Serializable
 
-  case class ChannelSubject(channelName: String) extends ObserverSubject {
-    override def isInterestedIn(notification: Any): Boolean = notification match {
-      case ChannelMessageReceived(msg: ChannelMessage) if msg.getChannel == channelName => true
-      case LeftChannel(`channelName`) => true
-    }
-  }
+
 
   val OnRegisterStateSubject = ClassFilterSubject(classOf[ProxyState])
 
@@ -183,11 +180,11 @@ object ConnectionObservableProxy {
 
   object Stop extends ConnectionCmd
 
-  case class ConnectedToServer(connectionDesc: ConnectionDesc)
+  case class ConnectedToServer(connectionDesc: ConnectionDesc) extends ConnectionNotification
 
-  case class FailedToConnectToServer(chatConnectionDesc: ConnectionDesc) extends FailureNotification
+  case class FailedToConnectToServer(connectionDesc: ConnectionDesc) extends FailureNotification
 
-  case class DisconnectedFromServer(connectionDesc: ConnectionDesc)
+  case class DisconnectedFromServer(connectionDesc: ConnectionDesc) extends ConnectionNotification
 
   case class FailedToDisconnectFromServer(connectionDesc: ConnectionDesc) extends FailureNotification
 
@@ -195,13 +192,13 @@ object ConnectionObservableProxy {
 
   case class LeaveChannel(name: String) extends ConnectionCmd
 
-  case class JoinedChannel(name: String)
+  case class JoinedChannel(serverDesc: ServerDesc, name: String) extends ConnectionNotification
 
-  case class FailedToJoinChannel(name: String) extends FailureNotification
+  case class FailedToJoinChannel(serverDesc: ServerDesc, name: String) extends FailureNotification
 
-  case class LeftChannel(name: String)
+  case class LeftChannel(serverDesc: ServerDesc,name: String) extends ConnectionNotification
 
-  case class FailedToLeaveChannel(name: String) extends FailureNotification
+  case class FailedToLeaveChannel(serverDesc: ServerDesc, name: String) extends FailureNotification
 
   case class SendChannelMessage(channel: String, msg: String) extends ConnectionCmd
 

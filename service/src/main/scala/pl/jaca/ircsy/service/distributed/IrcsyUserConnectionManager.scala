@@ -5,16 +5,17 @@ import java.time.LocalDate
 import akka.actor.{Actor, ActorRef}
 import akka.actor.Actor.Receive
 import akka.contrib.pattern.ReliableProxy.Message
+import pl.jaca.ircsy.chat.messages.notification.ChannelJoinNotification
 import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.chat.messages.{ChannelMessage, Notification, PrivateMessage}
 import pl.jaca.ircsy.clientnode.ClientNodeReceptionist.{ObserveUser, RunCommand, RunConnectionCommand}
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy
-import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ChannelMessageReceived, ConnectionCmd, NotificationReceived, PrivateMessageReceived}
+import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.ConnectionCmd
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{ForwardToProxy, StartProxy}
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.ObserverCmd
 import pl.jaca.ircsy.service.distributed.ClientNodeProxy.ForwardToClientNode
 import pl.jaca.ircsy.service.distributed.IrcsyUserConnectionManager._
-import pl.jaca.ircsy.service.notifications.{ConnectedToServerNotification, FailedToConnectToServerNotification}
+import pl.jaca.ircsy.service.notifications._
 import rx.lang.scala.Subject
 
 import scala.util.Try
@@ -30,9 +31,9 @@ class IrcsyUserConnectionManager(nickname: String,
                                  clientNodeProxy: ActorRef) extends Actor {
 
   private var activeServers: Set[ServerDesc] = Set.empty
+  private var activeChannels: Map[ServerDesc, Set[String]] = Map.empty.withDefault(_ => Set.empty)
 
-
-  override def receive: Receive = receiveCmd orElse receiveCmd
+  override def receive: Receive = receiveCmd orElse receiveConnectionNotification orElse receiveChatMessage
 
   def receiveCmd: Receive = {
     case JoinChannel(server, channel) =>
@@ -49,23 +50,43 @@ class IrcsyUserConnectionManager(nickname: String,
 
     case SendChannelMessage(server, channel, message) =>
       sendChannelMessage(server, channel, message)
+  }
+
+  def receiveConnectionNotification: Receive = {
+    case ConnectionObservableProxy.JoinedChannel(serverDesc, channel) =>
+      val newValue: Set[String] = activeChannels(serverDesc) + channel
+      activeChannels = activeChannels.updated(serverDesc, newValue)
+
+    case ConnectionObservableProxy.LeftChannel(serverDesc, channel) =>
+      val newValue: Set[String] = activeChannels(serverDesc) - channel
+      activeChannels = activeChannels.updated(serverDesc, newValue)
 
     case ConnectionObservableProxy.ConnectedToServer(connectionDesc) =>
       activeServers += connectionDesc.getServer
       notifications.onNext(new ConnectedToServerNotification(connectionDesc.getServer, connectionDesc.getNickname, LocalDate.now()))
 
-    case failure @ ConnectionObservableProxy.FailedToConnectToServer(connectionDesc) =>
+    case failure@ConnectionObservableProxy.FailedToConnectToServer(connectionDesc) =>
       notifications.onNext(new FailedToConnectToServerNotification(connectionDesc.getServer, connectionDesc.getNickname, failure.getCause, LocalDate.now()))
+
+    case ConnectionObservableProxy.DisconnectedFromServer(connectionDesc) =>
+      activeServers -= connectionDesc.getServer
+      notifications.onNext(new DisconnectedFromServerNotification(connectionDesc.getServer, connectionDesc.getNickname, LocalDate.now()))
+
+    case failure@ConnectionObservableProxy.FailedToDisconnectFromServer(connectionDesc) =>
+      activeServers -= connectionDesc.getServer
+      notifications.onNext(new FailedToDisconnectFromServerNotification(connectionDesc.getServer, connectionDesc.getNickname, failure.getCause, LocalDate.now()))
   }
 
-  def receiveMessage: Receive = {
-    case msg: PrivateMessageReceived =>
+  def receiveChatMessage: Receive = {
+    case msg: ConnectionObservableProxy.PrivateMessageReceived =>
       privateMessages.onNext(msg.privateMessage)
-    case msg: ChannelMessageReceived =>
+    case msg: ConnectionObservableProxy.ChannelMessageReceived =>
       channelMessages.onNext(msg.channelMessage)
-    case not: NotificationReceived =>
+    case not: ConnectionObservableProxy.NotificationReceived =>
       notifications.onNext(not.notification)
+
   }
+
 
   def connectToServer(serverDesc: ServerDesc) {
     val connection: ConnectionDesc = new ConnectionDesc(serverDesc, nickname)
@@ -98,5 +119,13 @@ object IrcsyUserConnectionManager {
   case class SendPrivateMessage(server: ServerDesc, destUser: String, message: String)
 
   case class SendChannelMessage(serverDesc: ServerDesc, channelName: String, message: String)
+
+  case class GetChannels(serverDesc: ServerDesc)
+
+  case class Channels(channels: Set[String])
+
+  case class GetServers()
+
+  case class Servers(servers: Set[ServerDesc])
 
 }

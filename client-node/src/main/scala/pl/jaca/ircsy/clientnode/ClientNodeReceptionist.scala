@@ -5,7 +5,7 @@ import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.sharding.ClusterSharding
 import pl.jaca.ircsy.chat.ConnectionDesc
 import pl.jaca.ircsy.clientnode.ClientNodeReceptionist._
-import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ChannelMessageReceived, ConnectionCmd, NotificationReceived, PrivateMessageReceived}
+import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{ForwardToProxy, ProxyCoordinatorCmd}
 import pl.jaca.ircsy.clientnode.connection.irc.IrcConnectionFactory
@@ -43,15 +43,28 @@ class ClientNodeReceptionist extends Actor {
 
 object ClientNodeReceptionist {
 
-  val UserObserverSubject = ClassFilterSubject(classOf[ChannelMessageReceived], classOf[PrivateMessageReceived], classOf[NotificationReceived])
+  val UserObserverSubject: ObserverSubject = ClassFilterSubject(
+    classOf[ChannelMessageReceived],
+    classOf[PrivateMessageReceived],
+    classOf[NotificationReceived],
+    classOf[JoinedChannel]) and FilterSubject {
+    case _: ConnectionNotification => true
+  }
 
   case class StartConnection(connection: ConnectionDesc)
-  case class RunConnectionCommand private[ClientNodeReceptionist] (connection: ConnectionDesc, cmd: Any)
+
+  case class RunConnectionCommand private[ClientNodeReceptionist](connection: ConnectionDesc, cmd: Any)
+
   object RunConnectionCommand {
     def apply(connection: ConnectionDesc, connectionCmd: ConnectionCmd) = new RunConnectionCommand(connection, connectionCmd)
+
     def apply(connection: ConnectionDesc, observableCmd: ObserverCmd) = new RunConnectionCommand(connection, observableCmd)
   }
+
   case class RunCommand(cmd: ProxyCoordinatorCmd)
+
   case class ObserveUser(connectionDesc: ConnectionDesc, observer: ActorRef)
+
   case class StopObservingUser(connectionDesc: ConnectionDesc, observer: ActorRef)
+
 }

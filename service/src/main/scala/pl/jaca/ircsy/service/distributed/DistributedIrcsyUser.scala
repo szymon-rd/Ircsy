@@ -1,18 +1,21 @@
 package pl.jaca.ircsy.service.distributed
 
 import java.util
-import java.util.concurrent.CompletableFuture
 
 import akka.actor.{ActorRef, ActorSystem, Props}
-import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
+import akka.pattern.ask
+
+import scala.concurrent.duration._
+import pl.jaca.ircsy.chat.ServerDesc
 import pl.jaca.ircsy.chat.messages.{ChannelMessage, Notification, PrivateMessage}
-import pl.jaca.ircsy.clientnode.ClientNodeReceptionist.RunConnectionCommand
-import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{JoinChannel, SendChannelMessage, SendPrivateMessage}
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.ForwardToProxy
-import pl.jaca.ircsy.service.distributed.ClientNodeProxy.ForwardToClientNode
+import pl.jaca.ircsy.service.distributed.IrcsyUserConnectionManager.{Channels, GetChannels, GetServers, Servers}
 import pl.jaca.ircsy.service.{IrcsyUser, UserMessageRepository, UserMessageRepositoryFactory}
 import rx.Observable
 import rx.lang.scala.Subject
+
+import scala.concurrent.Await
+import scala.language.postfixOps
+import scala.collection.JavaConverters._
 
 /**
   * @author Jaca777
@@ -26,13 +29,20 @@ class DistributedIrcsyUser(name: String, system: ActorSystem, clientNodeProxy: A
 
   private val messageRepository = repositoryFactory.newRepository()
 
-  private val connectionManager =  system.actorOf(Props(new IrcsyUserConnectionManager(name, privateMessages, channelMessages, notifications, clientNodeProxy)))
+  private val connectionManager = system.actorOf(Props(new IrcsyUserConnectionManager(name, privateMessages, channelMessages, notifications, clientNodeProxy)))
 
   override def getName: String = name
 
-  override def getServers: CompletableFuture[util.List[ServerDesc]] = ???
+  override def getServers: util.Set[ServerDesc] =
+    Await.result(connectionManager ? GetServers, DistributedIrcsyUser.ManagerTimeout)
+      .asInstanceOf[Servers].servers
+      .asJava
 
-  override def getChannels(server: ServerDesc):  CompletableFuture[util.List[String]] = ???
+
+  override def getChannels(server: ServerDesc): util.Set[String] =
+    Await.result(connectionManager ? GetChannels(server), DistributedIrcsyUser.ManagerTimeout)
+      .asInstanceOf[Channels].channels
+      .asJava
 
   override def getPrivateMessages: Observable[PrivateMessage] = privateMessages.asJavaObservable.asInstanceOf[Observable[PrivateMessage]]
 
@@ -54,4 +64,8 @@ class DistributedIrcsyUser(name: String, system: ActorSystem, clientNodeProxy: A
 
   override def getMessageRepository: UserMessageRepository = messageRepository
 
+}
+
+object DistributedIrcsyUser {
+  val ManagerTimeout = 2 seconds
 }

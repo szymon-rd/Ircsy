@@ -9,10 +9,10 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 import pl.jaca.ircsy.chat.{ConnectionDesc, ServerDesc}
 import pl.jaca.ircsy.chat.messages.{ChannelMessage, ChatUser}
-import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ChannelMessageReceived, ChannelSubject, LeftChannel}
+import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy.{ChannelMessageReceived, LeftChannel}
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyPublisher
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyPublisher.{ChannelConnectionFound, FindChannelConnection}
-import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollector.Stop
+import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollector.{ChannelMessageCollectorSubject, Stop}
 import pl.jaca.ircsy.clientnode.messagecollection.repository.{MessageRepository, MessageRepositoryFactory}
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol.{Observer, RegisterObserver, UnregisterObserver}
 
@@ -64,7 +64,7 @@ class ChannelMessagesCollectorSpec extends {
       val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))
       mediator.receiveN(2) // Subscribe, publish
       collector ! ChannelConnectionFound("bar", connection, proxy.ref)
-      proxy.expectMsg(RegisterObserver(Observer(collector, Set(ChannelSubject("bar")))))
+      proxy.expectMsg(RegisterObserver(Observer(collector, Set(ChannelMessageCollectorSubject("bar")))))
     }
 
 
@@ -96,7 +96,7 @@ class ChannelMessagesCollectorSpec extends {
       mediator.receiveN(2) // Subscribe, publish
       collector ! ChannelConnectionFound("bar", connection, proxy.ref)
       proxy.receiveN(1) // Register observer
-      proxy.send(collector, LeftChannel("bar"))
+      proxy.send(collector, LeftChannel(serverDesc, "bar"))
       mediator.expectMsg(Publish("channels-foo:42", FindChannelConnection(serverDesc, "bar")))
     }
 
@@ -113,7 +113,7 @@ class ChannelMessagesCollectorSpec extends {
 
       collector ! Stop
       watch(collector)
-      proxy.expectMsg(UnregisterObserver(Observer(collector, Set(ChannelSubject("bar")))))
+      proxy.expectMsg(UnregisterObserver(Observer(collector, Set(ChannelMessageCollectorSubject("bar")))))
       expectTerminated(collector)
     }
   }

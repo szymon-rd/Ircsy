@@ -10,16 +10,24 @@ object ObservableActorProtocol {
   trait ObserverCmd
 
   case class Observer(ref: ActorRef, subjects: Set[ObserverSubject]) {
-    def isInterestedIn(notification: Any): Boolean =
-      subjects.exists(_ isInterestedIn notification)
+    def isInterestedIn(msg: Any): Boolean =
+      subjects.exists(_ isInterestedIn msg)
   }
 
   abstract class ObserverSubject {
-    def isInterestedIn(notification: Any): Boolean
+    def isInterestedIn(msg: Any): Boolean
+    def and(observerSubject: ObserverSubject) = new ObserverSubject {
+      override def isInterestedIn(msg: Any): Boolean =
+        this.isInterestedIn(msg) || observerSubject.isInterestedIn(msg)
+    }
+  }
+
+  case class FilterSubject(filter: (Any => Boolean)) extends ObserverSubject {
+    override def isInterestedIn(msg: Any): Boolean = filter(msg)
   }
 
   case class ClassFilterSubject(classes: Class[_]*) extends ObserverSubject{
-    override def isInterestedIn(notification: Any): Boolean = classes contains notification.getClass
+    override def isInterestedIn(msg: Any): Boolean = classes contains msg.getClass
   }
 
   case class RegisterObserver(observer: Observer) extends ObserverCmd
