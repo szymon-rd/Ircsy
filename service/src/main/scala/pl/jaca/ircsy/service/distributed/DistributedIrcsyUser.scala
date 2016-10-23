@@ -67,5 +67,5 @@ class DistributedIrcsyUser(name: String, system: ActorSystem, clientNodeProxy: A
 }
 
 object DistributedIrcsyUser {
-  val ManagerTimeout = 2 seconds
+  implicit val ManagerTimeout = 2 seconds
 }

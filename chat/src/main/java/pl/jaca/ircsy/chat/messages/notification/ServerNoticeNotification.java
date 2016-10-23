@@ -3,7 +3,7 @@ package pl.jaca.ircsy.chat.messages.notification;
 import pl.jaca.ircsy.chat.ServerDesc;
 import pl.jaca.ircsy.chat.messages.Notification;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * @author Jaca777
@@ -12,10 +12,10 @@ import java.time.LocalDate;
 public class ServerNoticeNotification implements Notification {
 
     private ServerDesc serverDesc;
-    private LocalDate time;
+    private LocalDateTime time;
     private String text;
 
-    public ServerNoticeNotification(ServerDesc serverDesc, LocalDate time, String text) {
+    public ServerNoticeNotification(ServerDesc serverDesc, LocalDateTime time, String text) {
         this.serverDesc = serverDesc;
         this.time = time;
         this.text = text;
@@ -26,7 +26,7 @@ public class ServerNoticeNotification implements Notification {
     }
 
     @Override
-    public LocalDate getTime() {
+    public LocalDateTime getTime() {
         return time;
     }
 

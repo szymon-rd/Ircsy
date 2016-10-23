@@ -1,6 +1,6 @@
 package pl.jaca.ircsy.service.distributed.cassandra
 
-import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util
 
 import pl.jaca.ircsy.chat.PrivateChat
@@ -12,7 +12,7 @@ import pl.jaca.ircsy.service.{ChannelMessageRepository, ChannelMessageRepository
   *         Created 2016-06-05 at 13
   */
 class CassandraUserMessageRepository(username: String) extends UserMessageRepository {
-  override def getPrivateMessages(chat: PrivateChat, from: LocalDate, to: LocalDate): util.List[PrivateMessage] = ???
+  override def getPrivateMessages(chat: PrivateChat, from: LocalDateTime, to: LocalDateTime): util.List[PrivateMessage] = ???
 
   override def getLastPrivateMessages(chat: PrivateChat, count: Int): util.List[PrivateMessage] = ???
 }

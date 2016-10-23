@@ -2,7 +2,7 @@ package pl.jaca.ircsy.service.notifications;
 
 import pl.jaca.ircsy.chat.ServerDesc;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * @author Jaca777
@@ -12,9 +12,9 @@ public class FailedToDisconnectFromServerNotification implements ApplicationNoti
     private ServerDesc serverDesc;
     private String nickname;
     private Throwable cause;
-    private LocalDate time;
+    private LocalDateTime time;
 
-    public FailedToDisconnectFromServerNotification(ServerDesc serverDesc, String nickname, Throwable cause, LocalDate time) {
+    public FailedToDisconnectFromServerNotification(ServerDesc serverDesc, String nickname, Throwable cause, LocalDateTime time) {
         this.serverDesc = serverDesc;
         this.nickname = nickname;
         this.cause = cause;
@@ -34,7 +34,7 @@ public class FailedToDisconnectFromServerNotification implements ApplicationNoti
     }
 
     @Override
-    public LocalDate getTime() {
+    public LocalDateTime getTime() {
         return time;
     }
 }

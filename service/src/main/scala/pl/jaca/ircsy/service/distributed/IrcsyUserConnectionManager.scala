@@ -1,6 +1,6 @@
 package pl.jaca.ircsy.service.distributed
 
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 import akka.actor.{Actor, ActorRef}
 import akka.actor.Actor.Receive
@@ -63,18 +63,18 @@ class IrcsyUserConnectionManager(nickname: String,
 
     case ConnectionObservableProxy.ConnectedToServer(connectionDesc) =>
       activeServers += connectionDesc.getServer
-      notifications.onNext(new ConnectedToServerNotification(connectionDesc.getServer, connectionDesc.getNickname, LocalDate.now()))
+      notifications.onNext(new ConnectedToServerNotification(connectionDesc.getServer, connectionDesc.getNickname, LocalDateTime.now()))
 
     case failure@ConnectionObservableProxy.FailedToConnectToServer(connectionDesc) =>
-      notifications.onNext(new FailedToConnectToServerNotification(connectionDesc.getServer, connectionDesc.getNickname, failure.getCause, LocalDate.now()))
+      notifications.onNext(new FailedToConnectToServerNotification(connectionDesc.getServer, connectionDesc.getNickname, failure.getCause, LocalDateTime.now()))
 
     case ConnectionObservableProxy.DisconnectedFromServer(connectionDesc) =>
       activeServers -= connectionDesc.getServer
-      notifications.onNext(new DisconnectedFromServerNotification(connectionDesc.getServer, connectionDesc.getNickname, LocalDate.now()))
+      notifications.onNext(new DisconnectedFromServerNotification(connectionDesc.getServer, connectionDesc.getNickname, LocalDateTime.now()))
 
     case failure@ConnectionObservableProxy.FailedToDisconnectFromServer(connectionDesc) =>
       activeServers -= connectionDesc.getServer
-      notifications.onNext(new FailedToDisconnectFromServerNotification(connectionDesc.getServer, connectionDesc.getNickname, failure.getCause, LocalDate.now()))
+      notifications.onNext(new FailedToDisconnectFromServerNotification(connectionDesc.getServer, connectionDesc.getNickname, failure.getCause, LocalDateTime.now()))
   }
 
   def receiveChatMessage: Receive = {

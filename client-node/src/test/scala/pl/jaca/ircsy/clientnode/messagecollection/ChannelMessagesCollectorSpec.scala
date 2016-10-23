@@ -1,6 +1,6 @@
 package pl.jaca.ircsy.clientnode.messagecollection
 
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 import akka.actor.{ActorSystem, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
@@ -74,7 +74,7 @@ class ChannelMessagesCollectorSpec extends {
       val repository = mock[MessageRepository]
       val factory = mock[MessageRepositoryFactory]
       (factory.newRepository _).expects().returns(repository)
-      val message = new ChannelMessage(serverDesc, "bar", LocalDate.now(), testUser, "message")
+      val message = new ChannelMessage(serverDesc, "bar", LocalDateTime.now(), testUser, "message")
       (repository.addChannelMessage _).expects(serverDesc, message)
 
       val collector = system.actorOf(Props(new ChannelMessageCollector(serverDesc, "bar", mediator.ref, factory)))

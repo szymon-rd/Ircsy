@@ -4,7 +4,7 @@ import pl.jaca.ircsy.chat.ServerDesc;
 import pl.jaca.ircsy.chat.messages.ChatUser;
 import pl.jaca.ircsy.chat.messages.Notification;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * @author Jaca777
@@ -13,11 +13,11 @@ import java.time.LocalDate;
 public class UserQuitNotification implements Notification {
 
     private ServerDesc serverDesc;
-    private LocalDate time;
+    private LocalDateTime time;
     private ChatUser user;
     private String quitMsg;
 
-    public UserQuitNotification(ServerDesc serverDesc, LocalDate time, ChatUser user, String quitMsg) {
+    public UserQuitNotification(ServerDesc serverDesc, LocalDateTime time, ChatUser user, String quitMsg) {
         this.serverDesc = serverDesc;
         this.time = time;
         this.user = user;
@@ -29,7 +29,7 @@ public class UserQuitNotification implements Notification {
     }
 
     @Override
-    public LocalDate getTime() {
+    public LocalDateTime getTime() {
         return time;
     }
 

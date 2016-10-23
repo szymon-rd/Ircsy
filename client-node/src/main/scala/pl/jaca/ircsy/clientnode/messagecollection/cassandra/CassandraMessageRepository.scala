@@ -27,23 +27,36 @@ class CassandraMessageRepository(contactPoints: Set[InetAddress],
 
   val channelMessageStatement = {
     val unprepared: RegularStatement =
-      new SimpleStatement(s"INSERT INTO $channelMessagesTable VALUES (?, ?, ?, ?, ?, uuid())").setConsistencyLevel(ConsistencyLevel.QUORUM).asInstanceOf[RegularStatement]
+      new SimpleStatement(s"INSERT INTO $channelMessagesTable VALUES (?, ?, ?, ?, ?, ?, ? uuid())").setConsistencyLevel(ConsistencyLevel.QUORUM).asInstanceOf[RegularStatement]
     session.prepare(unprepared)
   }
 
   override def addChannelMessage(server: ServerDesc, message: ChannelMessage): Try[Unit] = Try {
-    val statement = channelMessageStatement.bind(server.toString, message.getChannel, message.getTime, message.getAuthor.getNick, message.getText)
+    val statement = channelMessageStatement.bind(server.toString,
+      message.getChannel,
+      message.getTime,
+      message.getAuthor.getNick,
+      message.getAuthor.getHostname,
+      message.getAuthor.getIdent,
+      message.getText)
     session.execute(statement)
   }
 
   val privateMessageStatement = {
     val unprepared: RegularStatement =
-      new SimpleStatement(s"INSERT INTO $privateMessagesTable VALUES (?, ?, ?, ?, ?, ?, uuid())").setConsistencyLevel(ConsistencyLevel.QUORUM).asInstanceOf[RegularStatement]
+      new SimpleStatement(s"INSERT INTO $privateMessagesTable VALUES (?, ?, ?, ?, ?, ?, ?, ? uuid())").setConsistencyLevel(ConsistencyLevel.QUORUM).asInstanceOf[RegularStatement]
     session.prepare(unprepared)
   }
 
   override def addPrivateMessage(server: ServerDesc, message: PrivateMessage): Try[Unit] = Try {
-    val statement = privateMessageStatement.bind(server.toString, message.getChat.getMainParticipantName, message.getChat.getSecondParticipantName, message.getTime, message.getAuthor, message.getText)
+    val statement = privateMessageStatement.bind(server.toString,
+      message.getChat.getMainParticipantName,
+      message.getChat.getSecondParticipantName,
+      message.getTime,
+      message.getAuthor.getNick,
+      message.getAuthor.getHostname,
+      message.getAuthor.getIdent,
+      message.getText)
     session.execute(statement)
   }
 

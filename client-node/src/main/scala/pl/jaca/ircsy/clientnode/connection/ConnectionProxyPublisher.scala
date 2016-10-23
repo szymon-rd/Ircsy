@@ -28,8 +28,8 @@ class ConnectionProxyPublisher(connection: ConnectionDesc, proxy: ActorRef, pubS
   }
 
   def observing(connection: ConnectionDesc, channels: Set[String]): Receive = {
-    case JoinedChannel(channel) => context become observing(connection, channels + channel)
-    case LeftChannel(channel) => context become observing(connection, channels - channel)
+    case JoinedChannel(server, channel) => context become observing(connection, channels + channel)
+    case LeftChannel(server, channel) => context become observing(connection, channels - channel)
 
     case FindChannelConnection(desc, channel) =>
       if (desc == connection.getServer && (channels contains channel))

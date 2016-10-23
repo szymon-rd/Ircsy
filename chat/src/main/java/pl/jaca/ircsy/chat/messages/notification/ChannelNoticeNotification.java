@@ -4,7 +4,7 @@ import pl.jaca.ircsy.chat.ServerDesc;
 import pl.jaca.ircsy.chat.messages.ChannelNotification;
 import pl.jaca.ircsy.chat.messages.ChatUser;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * @author Jaca777
@@ -13,12 +13,12 @@ import java.time.LocalDate;
 public class ChannelNoticeNotification implements ChannelNotification {
 
     private ServerDesc serverDesc;
-    private LocalDate time;
+    private LocalDateTime time;
     private String channel;
     private ChatUser author;
     private String text;
 
-    public ChannelNoticeNotification(ServerDesc serverDesc, LocalDate time, String channel, ChatUser author, String text) {
+    public ChannelNoticeNotification(ServerDesc serverDesc, LocalDateTime time, String channel, ChatUser author, String text) {
         this.serverDesc = serverDesc;
         this.time = time;
         this.channel = channel;
@@ -31,7 +31,7 @@ public class ChannelNoticeNotification implements ChannelNotification {
     }
 
     @Override
-    public LocalDate getTime() {
+    public LocalDateTime getTime() {
         return time;
     }
 

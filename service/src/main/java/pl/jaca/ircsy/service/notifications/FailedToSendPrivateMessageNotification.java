@@ -2,7 +2,7 @@ package pl.jaca.ircsy.service.notifications;
 
 import pl.jaca.ircsy.chat.ServerDesc;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * @author Jaca777
@@ -13,9 +13,9 @@ public class FailedToSendPrivateMessageNotification implements ApplicationNotifi
     private String destUserName;
     private String message;
     private Throwable cause;
-    private LocalDate time;
+    private LocalDateTime time;
 
-    public FailedToSendPrivateMessageNotification(LocalDate time, ServerDesc server, String destUserName, String message, Throwable cause) {
+    public FailedToSendPrivateMessageNotification(LocalDateTime time, ServerDesc server, String destUserName, String message, Throwable cause) {
         this.server = server;
         this.destUserName = destUserName;
         this.message = message;
@@ -39,7 +39,7 @@ public class FailedToSendPrivateMessageNotification implements ApplicationNotifi
         return cause;
     }
 
-    public LocalDate getTime() {
+    public LocalDateTime getTime() {
         return time;
     }
 }

@@ -1,9 +1,8 @@
 package pl.jaca.ircsy.service.notifications;
 
 import pl.jaca.ircsy.chat.ConnectionDesc;
-import pl.jaca.ircsy.chat.ServerDesc;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * @author Jaca777
@@ -14,9 +13,9 @@ public class FailedToJoinChannelNotification implements ApplicationNotification 
     private ConnectionDesc connectionDesc;
     private String channelName;
     private Throwable cause;
-    private LocalDate time;
+    private LocalDateTime time;
 
-    public FailedToJoinChannelNotification(ConnectionDesc connectionDesc, String channelName, Throwable cause, LocalDate time) {
+    public FailedToJoinChannelNotification(ConnectionDesc connectionDesc, String channelName, Throwable cause, LocalDateTime time) {
         this.connectionDesc = connectionDesc;
         this.channelName = channelName;
         this.cause = cause;
@@ -36,7 +35,7 @@ public class FailedToJoinChannelNotification implements ApplicationNotification 
     }
 
     @Override
-    public LocalDate getTime() {
+    public LocalDateTime getTime() {
         return time;
     }
 }

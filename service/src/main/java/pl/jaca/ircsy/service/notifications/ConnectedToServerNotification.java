@@ -2,7 +2,7 @@ package pl.jaca.ircsy.service.notifications;
 
 import pl.jaca.ircsy.chat.ServerDesc;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * @author Jaca777
@@ -12,9 +12,9 @@ public class ConnectedToServerNotification implements ApplicationNotification{
 
     private ServerDesc serverDesc;
     private String username;
-    private LocalDate time;
+    private LocalDateTime time;
 
-    public ConnectedToServerNotification(ServerDesc serverDesc, String username, LocalDate time) {
+    public ConnectedToServerNotification(ServerDesc serverDesc, String username, LocalDateTime time) {
         this.serverDesc = serverDesc;
         this.username = username;
         this.time = time;
@@ -29,7 +29,7 @@ public class ConnectedToServerNotification implements ApplicationNotification{
     }
 
     @Override
-    public LocalDate getTime() {
+    public LocalDateTime getTime() {
         return time;
     }
 }

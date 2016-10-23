@@ -1,6 +1,6 @@
 package pl.jaca.ircsy.clientnode.connection.irc
 
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 import com.ircclouds.irc.api.domain.messages.{ChannelPrivMsg, UserPrivMsg}
 import com.ircclouds.irc.api.domain.messages.interfaces.IMessage
@@ -15,5 +15,5 @@ import rx.lang.scala.{Observable, Subject}
   */
 class ChannelMessageListener(server: ServerDesc, messages: Subject[ChannelMessage]) extends VariousMessageListenerAdapter {
   override def onChannelMessage(aMsg: ChannelPrivMsg): Unit =
-    messages.onNext(new ChannelMessage(server, aMsg.getChannelName, LocalDate.now(), new ChatUserAdapter(aMsg.getSource), aMsg.getText))
+    messages.onNext(new ChannelMessage(server, aMsg.getChannelName, LocalDateTime.now(), new ChatUserAdapter(aMsg.getSource), aMsg.getText))
 }

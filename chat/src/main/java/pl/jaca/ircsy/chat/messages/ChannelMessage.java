@@ -3,7 +3,7 @@ package pl.jaca.ircsy.chat.messages;
 import pl.jaca.ircsy.chat.ServerDesc;
 
 import java.io.Serializable;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * @author Jaca777
@@ -13,11 +13,11 @@ public class ChannelMessage implements Serializable {
 
     private ServerDesc serverDesc;
     private String channel;
-    private LocalDate time;
+    private LocalDateTime time;
     private ChatUser author;
     private String text;
 
-    public ChannelMessage(ServerDesc serverDesc, String channel, LocalDate time, ChatUser author, String text) {
+    public ChannelMessage(ServerDesc serverDesc, String channel, LocalDateTime time, ChatUser author, String text) {
         this.serverDesc = serverDesc;
         this.channel = channel;
         this.time = time;
@@ -33,7 +33,7 @@ public class ChannelMessage implements Serializable {
         return channel;
     }
 
-    public LocalDate getTime() {
+    public LocalDateTime getTime() {
         return time;
     }
 
