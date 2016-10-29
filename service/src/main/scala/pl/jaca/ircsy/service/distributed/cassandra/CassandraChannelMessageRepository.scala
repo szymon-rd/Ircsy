@@ -69,16 +69,16 @@ class CassandraChannelMessageRepository(server: ServerDesc, channelName: String,
 
   private def toCassandraDate(javaDate: String): String = javaDate.replace('T', ' ')
 
+  override def getLastMessages(count: Int): util.List[ChannelMessage] = {
+    val statement = lastChannelMessageStatement.bind(count)
+    executeMessageSelectStatement(statement)
+  }
+
   private def executeMessageSelectStatement(statement: BoundStatement): util.List[ChannelMessage]  = {
     session.execute(statement).all()
       .parallelStream()
       .map(toJavaFunction(toChannelMessage))
       .collect(Collectors.toList())
-  }
-
-  override def getLastMessages(count: Int): util.List[ChannelMessage] = {
-    val statement = lastChannelMessageStatement.bind(count)
-    executeMessageSelectStatement(statement)
   }
 }
 
