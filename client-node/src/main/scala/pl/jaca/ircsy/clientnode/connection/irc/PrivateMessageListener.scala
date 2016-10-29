@@ -14,7 +14,7 @@ import rx.lang.scala.Subject
   */
 class PrivateMessageListener(server: ServerDesc, messages: Subject[PrivateMessage]) extends VariousMessageListenerAdapter {
   override def onUserPrivMessage(msg: UserPrivMsg): Unit = {
-    val chat = new PrivateChat(msg.getToUser, msg.getSource.getNick)
-    messages.onNext(new PrivateMessage(server, LocalDateTime.now(), chat, new ChatUserAdapter(msg.getSource), msg.getText))
+    val chat = new PrivateChat(server, msg.getToUser, msg.getSource.getNick)
+    messages.onNext(new PrivateMessage(LocalDateTime.now(), chat, new ChatUserAdapter(msg.getSource), msg.getText))
   }
 }

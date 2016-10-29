@@ -4,6 +4,7 @@ import java.util
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.pattern.ask
+import akka.util.Timeout
 
 import scala.concurrent.duration._
 import pl.jaca.ircsy.chat.ServerDesc
@@ -27,12 +28,13 @@ class DistributedIrcsyUser(name: String, system: ActorSystem, clientNodeProxy: A
   private val privateMessages = Subject[PrivateMessage]
   private val notifications = Subject[Notification]
 
-  private val messageRepository = repositoryFactory.newRepository()
+  private val messageRepository = repositoryFactory.newRepository(name)
 
   private val connectionManager = system.actorOf(Props(new IrcsyUserConnectionManager(name, privateMessages, channelMessages, notifications, clientNodeProxy)))
 
   override def getName: String = name
 
+  implicit val timeout = Timeout(DistributedIrcsyUser.ManagerTimeout)
   override def getServers: util.Set[ServerDesc] =
     Await.result(connectionManager ? GetServers, DistributedIrcsyUser.ManagerTimeout)
       .asInstanceOf[Servers].servers

@@ -76,8 +76,8 @@ class PrivateMessageCollectorSpec extends {
 
       val user1 = new ChatUser("foo1", "bar1", "foo1")
       val user2 = new ChatUser("foo", "foor", "baarr")
-      val privateChat = new PrivateChat("foo1", "foo2")
-      val message = new PrivateMessage(serverDesc, LocalDateTime.now(), privateChat, user2, "message")
+      val privateChat = new PrivateChat(serverDesc, "foo1", "foo2")
+      val message = new PrivateMessage(LocalDateTime.now(), privateChat, user2, "message")
       (repository.addPrivateMessage _).expects(serverDesc, message)
 
       val collector = system.actorOf(Props(new PrivateMessageCollector(connectionDesc, mediator.ref, factory)))
