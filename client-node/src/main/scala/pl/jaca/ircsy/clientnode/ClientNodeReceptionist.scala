@@ -20,7 +20,7 @@ import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterShardingImpl
   * @author Jaca777
   *         Created 2016-04-30 at 17
   */
-class ClientNodeReceptionist extends Actor {
+class ClientNodeReceptionist(cassandraContactPoints: Set[InetAddress]) extends Actor {
 
   val sharding = new RegionAwareClusterShardingImpl(ClusterSharding(context.system))
 
@@ -28,8 +28,7 @@ class ClientNodeReceptionist extends Actor {
 
   val proxyCoordinator = context.actorOf(Props(new ConnectionProxyRegionCoordinator(sharding, new IrcConnectionFactory, mediator)))
 
-  val contactPoints: Set[InetAddress] = ??? //TODO
-  val repositoryFactory = new CassandraMessageRepositoryFactory(contactPoints)
+  val repositoryFactory = new CassandraMessageRepositoryFactory(cassandraContactPoints)
   val messageCollectionCoordinator = context.actorOf(Props(
     new ChannelMessageCollectionRegionSupervisor(sharding, repositoryFactory, mediator))
   )
