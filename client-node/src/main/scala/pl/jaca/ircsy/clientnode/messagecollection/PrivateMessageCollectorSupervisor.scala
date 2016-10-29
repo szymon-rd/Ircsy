@@ -44,7 +44,5 @@ class PrivateMessageCollectorSupervisor extends Actor with ActorLogging {
 }
 
 object PrivateMessageCollectorSupervisor {
-
   case class Initialize(connectionDesc: ConnectionDesc, pubSubMediator: ActorRef, repositoryFactory: MessageRepositoryFactory)
-
 }

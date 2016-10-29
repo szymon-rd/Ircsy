@@ -1,5 +1,7 @@
 package pl.jaca.ircsy.clientnode
 
+import java.net.InetAddress
+
 import akka.actor.{Actor, ActorRef, Props}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.sharding.ClusterSharding
@@ -7,9 +9,10 @@ import pl.jaca.ircsy.chat.ConnectionDesc
 import pl.jaca.ircsy.clientnode.ClientNodeReceptionist._
 import pl.jaca.ircsy.clientnode.connection.ConnectionObservableProxy._
 import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator
-import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{ForwardToProxy, ProxyCoordinatorCmd}
+import pl.jaca.ircsy.clientnode.connection.ConnectionProxyRegionCoordinator.{ForwardToProxy, ProxyCoordinatorCmd, StartProxy, StopProxy}
 import pl.jaca.ircsy.clientnode.connection.irc.IrcConnectionFactory
-import pl.jaca.ircsy.clientnode.messagecollection.MessageCollectionRegionCoordinator
+import pl.jaca.ircsy.clientnode.messagecollection.ChannelMessageCollectionRegionSupervisor
+import pl.jaca.ircsy.clientnode.messagecollection.cassandra.CassandraMessageRepositoryFactory
 import pl.jaca.ircsy.clientnode.observableactor.ObservableActorProtocol._
 import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterShardingImpl
 
@@ -25,10 +28,17 @@ class ClientNodeReceptionist extends Actor {
 
   val proxyCoordinator = context.actorOf(Props(new ConnectionProxyRegionCoordinator(sharding, new IrcConnectionFactory, mediator)))
 
-  val messageCollectionCoordinator = context.actorOf(Props(new MessageCollectionRegionCoordinator(sharding, null)))
+  val contactPoints: Set[InetAddress] = ??? //TODO
+  val repositoryFactory = new CassandraMessageRepositoryFactory(contactPoints)
+  val messageCollectionCoordinator = context.actorOf(Props(
+    new ChannelMessageCollectionRegionSupervisor(sharding, repositoryFactory, mediator))
+  )
 
   override def receive: Actor.Receive = {
     case StartConnection(connection) =>
+      proxyCoordinator ! StartProxy(connection)
+    case StopConnection(connection) =>
+      proxyCoordinator ! StopProxy(connection)
     case RunConnectionCommand(connection, cmd) =>
       proxyCoordinator ! ForwardToProxy(connection, cmd)
     case RunCommand(cmd: ProxyCoordinatorCmd) =>
@@ -52,6 +62,8 @@ object ClientNodeReceptionist {
   }
 
   case class StartConnection(connection: ConnectionDesc)
+
+  case class StopConnection(connection: ConnectionDesc)
 
   case class RunConnectionCommand private[ClientNodeReceptionist](connection: ConnectionDesc, cmd: Any)
 

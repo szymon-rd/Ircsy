@@ -15,9 +15,9 @@ import scala.util.Try
   *         Created 2016-05-10 at 19
   */
 class CassandraMessageRepository(contactPoints: Set[InetAddress],
-                                 keyspace: String = "ircsy",
-                                 channelMessagesTable: String = "channel_messages",
-                                 privateMessagesTable: String = "private_messages") extends MessageRepository {
+                                 keyspace: String,
+                                 channelMessagesTable: String,
+                                 privateMessagesTable: String) extends MessageRepository {
 
   val cluster = Cluster.builder()
     .addContactPoints(contactPoints.asJava)
