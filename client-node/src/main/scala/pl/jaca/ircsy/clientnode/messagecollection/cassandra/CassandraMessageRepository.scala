@@ -1,6 +1,6 @@
 package pl.jaca.ircsy.clientnode.messagecollection.cassandra
 
-import java.net.InetAddress
+import java.net.{InetAddress, InetSocketAddress}
 
 import com.datastax.driver.core.{Cluster, ConsistencyLevel, RegularStatement, SimpleStatement}
 import pl.jaca.ircsy.chat.ServerDesc
@@ -14,13 +14,13 @@ import scala.util.Try
   * @author Jaca777
   *         Created 2016-05-10 at 19
   */
-class CassandraMessageRepository(contactPoints: Set[InetAddress],
+class CassandraMessageRepository(contactPoints: Set[InetSocketAddress],
                                  keyspace: String,
                                  channelMessagesTable: String,
                                  privateMessagesTable: String) extends MessageRepository {
 
   val cluster = Cluster.builder()
-    .addContactPoints(contactPoints.asJava)
+    .addContactPointsWithPorts(contactPoints.asJava)
     .build()
 
   val session = cluster.connect(keyspace)

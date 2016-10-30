@@ -45,7 +45,7 @@ class ChannelMessageCollectionRegionSupervisor(sharding: RegionAwareClusterShard
   val listenerRegion = sharding.findOrStartRegion(
     system = context.system,
     typeName = "ChannelMessageCollector",
-    entityProps = Props[ChannelMessageCollector],
+    entityProps = Props[ChannelMessageCollectorSupervisor],
     entityIdExtractor = extractEntityId,
     shardIdExtractor = extractShardId,
     stopMessage = Stop)

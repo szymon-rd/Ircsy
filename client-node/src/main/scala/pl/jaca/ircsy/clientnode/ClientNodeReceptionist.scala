@@ -1,6 +1,6 @@
 package pl.jaca.ircsy.clientnode
 
-import java.net.InetAddress
+import java.net.{InetAddress, InetSocketAddress}
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.cluster.pubsub.DistributedPubSub
@@ -20,7 +20,7 @@ import pl.jaca.ircsy.clientnode.sharding.RegionAwareClusterShardingImpl
   * @author Jaca777
   *         Created 2016-04-30 at 17
   */
-class ClientNodeReceptionist(cassandraContactPoints: Set[InetAddress]) extends Actor {
+class ClientNodeReceptionist(cassandraContactPoints: Set[InetSocketAddress]) extends Actor {
 
   val sharding = new RegionAwareClusterShardingImpl(ClusterSharding(context.system))
 
@@ -77,5 +77,4 @@ object ClientNodeReceptionist {
   case class ObserveUser(connectionDesc: ConnectionDesc, observer: ActorRef)
 
   case class StopObservingUser(connectionDesc: ConnectionDesc, observer: ActorRef)
-
 }
